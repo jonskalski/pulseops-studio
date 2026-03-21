@@ -14,6 +14,9 @@ import requests
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).parent / ".env")
 
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 DISCORD_TOPICS_WEBHOOK_URL = os.environ.get("DISCORD_TOPICS_WEBHOOK_URL")
@@ -121,6 +124,15 @@ def remove_pending_topic(topic_str):
 
 def post_to_discord(topics):
     """Post all topic suggestions to Discord as separate messages."""
+    try:
+        import sys
+        sys.path.insert(0, str(Path(__file__).parent))
+        from airtable.client import create_suggested
+        airtable_enabled = True
+    except Exception as e:
+        print(f"  Airtable unavailable: {e}")
+        airtable_enabled = False
+
     if not DISCORD_TOPICS_WEBHOOK_URL:
         print("  No DISCORD_TOPICS_WEBHOOK_URL set, skipping Discord.")
         return
@@ -129,6 +141,11 @@ def post_to_discord(topics):
         msg = f"**Topic Suggestion**\n**{topic['topic']}**\n_{topic['why']}_\n\nReact ✅ to publish, ❌ to skip."
         requests.post(DISCORD_TOPICS_WEBHOOK_URL, json={"content": msg}, timeout=10)
         append_pending_topic(topic["topic"])
+        if airtable_enabled:
+            try:
+                create_suggested(topic["topic"], why=topic.get("why"))
+            except Exception as e:
+                print(f"  Airtable write failed for '{topic['topic']}': {e}")
         print(f"  Posted: {topic['topic']}")
 
 # ── Main ─────────────────────────────────────────────────────────────────────

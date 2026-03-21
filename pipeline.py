@@ -11,11 +11,14 @@ import re
 import argparse
 import subprocess
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from pathlib import Path
+from dotenv import load_dotenv
 
 # ── Config ─────────────────────────────────────────────────────────────────
 BASE_DIR = Path(__file__).parent
+load_dotenv(BASE_DIR / ".env")
 AGENTS_DIR = BASE_DIR / "agents"
 RUNS_DIR = BASE_DIR / "runs"
 RUNS_DIR.mkdir(exist_ok=True)
@@ -26,6 +29,16 @@ WP_USER = os.environ.get("WP_USER")
 WP_APP_PASSWORD = os.environ.get("WP_APP_PASSWORD")
 DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL")
 PEXELS_API_KEY = os.environ.get("PEXELS_API_KEY")
+
+# ── Publish Schedule ────────────────────────────────────────────────────────
+# Days to publish: 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun
+PUBLISH_DAYS = [0, 1, 2, 3, 4]  # Mon-Fri
+PUBLISH_HOUR = 9                  # 9am EST
+SKIP_DATES = [                    # "YYYY-MM-DD" dates to never publish on
+    # "2026-07-04",               # Example: July 4th
+    # "2026-11-27",               # Example: Thanksgiving
+]
+# ────────────────────────────────────────────────────────────────────────────
 
 # Models: use Haiku for cheap steps, Sonnet for quality steps
 HAIKU = "claude-haiku-4-5-20251001"
@@ -40,12 +53,51 @@ AGENT_MODELS = {
     "06_approver": SONNET,
 }
 
+# ── Scheduling ──────────────────────────────────────────────────────────────
+
+def next_publish_slot():
+    """Find next available Mon-Fri 9am EST slot not already taken in WP."""
+    est = ZoneInfo("America/New_York")
+    now = datetime.now(est)
+
+    # Fetch already-scheduled future post dates from WP
+    try:
+        r = requests.get(
+            f"{WP_URL}/wp-json/wp/v2/posts",
+            params={"status": "future,draft", "per_page": 50, "_fields": "date"},
+            auth=(WP_USER, WP_APP_PASSWORD),
+            timeout=10,
+        )
+        taken = set()
+        for p in r.json():
+            try:
+                d = datetime.fromisoformat(p["date"]).strftime("%Y-%m-%d")
+                taken.add(d)
+            except Exception:
+                pass
+    except Exception:
+        taken = set()
+
+    candidate = now.replace(hour=PUBLISH_HOUR, minute=0, second=0, microsecond=0)
+    if now.hour >= PUBLISH_HOUR:
+        candidate += timedelta(days=1)
+
+    for _ in range(90):
+        date_str = candidate.strftime("%Y-%m-%d")
+        if candidate.weekday() in PUBLISH_DAYS and date_str not in taken and date_str not in SKIP_DATES:
+            return candidate.strftime("%Y-%m-%dT%H:%M:%S")
+        candidate += timedelta(days=1)
+
+    return candidate.strftime("%Y-%m-%dT%H:%M:%S")
+
 # ── Helpers ─────────────────────────────────────────────────────────────────
 
 def discord(msg):
     if DISCORD_WEBHOOK_URL:
         try:
-            requests.post(DISCORD_WEBHOOK_URL, json={"content": msg}, timeout=5)
+            chunks = [msg[i:i+1900] for i in range(0, len(msg), 1900)]
+            for chunk in chunks:
+                requests.post(DISCORD_WEBHOOK_URL, json={"content": chunk}, timeout=5)
         except Exception:
             pass
 
@@ -170,7 +222,8 @@ def publish_to_wordpress(post_data, keyword=None):
         "slug": post_data["slug"],
         "content": content,
         "excerpt": post_data.get("meta_description", ""),
-        "status": "publish",
+        "status": "future",
+        "date": next_publish_slot(),
         "author": 257061572,
     }
     if featured_media_id:
@@ -337,14 +390,22 @@ def run_pipeline(topic, why=None):
         return
 
     # ── Publish ──────────────────────────────────────────────────────────
-    discord(f"📤 Publishing to WordPress...")
+    discord(f"📤 Scheduling to WordPress...")
     try:
         keyword = outline.get("target_keyword", "") if isinstance(outline, dict) else ""
         result = publish_to_wordpress(polished, keyword=keyword)
         post_url = result.get("link", "unknown")
-        discord(f"🎉 **Published!**\n**URL:** {post_url}\n**Title:** {polished.get('title')}")
-        print(f"\n✅ Published: {post_url}")
+        post_id  = result.get("id", "")
+        pub_date = result.get("date", "")
+        discord(f"🎉 **Scheduled!**\n**URL:** {post_url}\n**Title:** {polished.get('title')}\n**Publishes:** {pub_date[:10]}")
+        print(f"\n✅ Scheduled: {post_url}")
         (run_dir / "published.json").write_text(json.dumps(result, indent=2))
+        # ── Airtable update ──────────────────────────────────────────────
+        try:
+            from airtable.client import mark_published
+            mark_published(topic, post_id, post_url)
+        except Exception as ae:
+            print(f"  Airtable update failed: {ae}")
     except Exception as e:
         discord(f"❌ **WordPress publish failed:** {str(e)}")
         print(f"\n❌ Publish failed: {e}")

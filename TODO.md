@@ -3,23 +3,45 @@
 ## Pending
 - [ ] Install glow for terminal markdown rendering
 - [ ] Set up filebrowser for web-based file browsing (accessible from any device)
-- [ ] Build pillar_planner.py — given a pillar topic, output cluster map (5-8 titles + keywords), feed each into pipeline.py
 - [ ] Set up AdSense account (need ~6-8 weeks of consistent publishing first)
 - [ ] Run topic_picker.py end-to-end to test all 5 topics posting + pending_topics.txt dedup
 - [ ] Test full pipeline with --why flag passed from Discord bot
-- [ ] Set up Notion databases: Pillars table + Content Ideas table (per ROADMAP.md schema)
 - [ ] Create Discord #drafts channel + get webhook URL
 - [ ] Create Discord #pillar-topics channel + get webhook URL
 - [ ] Provide n8n URL + API key for workflow setup
-- [ ] Set up rclone + Google Drive sync + cron
-- [ ] Schedule topic_picker.py cron (3am EST)
+- [ ] Set up rclone + Google Drive sync + cron (low priority — disaster recovery only)
+- [ ] Install gh CLI + authenticate with GitHub PAT
+- [ ] Install bat (syntax-highlighted terminal file viewer)
+- [ ] Install jq (JSON debugging in terminal)
+- [ ] Install tmux (persistent SSH sessions)
+- [ ] Install ufw + fail2ban (security before opening ports)
 - [ ] Schedule blog pipeline cron (7am EST)
 - [ ] Build buffer system (10 evergreen safety posts, auto-refill logic)
 - [ ] Build draft review flow (WP draft → Discord notify → ✅/❌/🔁 → publish or fallback)
 - [ ] Build 8pm approval reminder (n8n)
-- [ ] Build pillar brief flow (#pillar-topics → Claude brief → ✅ → Notion)
+- [ ] Add Suggested/Rejected status options to Clusters table in Airtable
 
 ## Completed
+- [x] Set up discord_bot.py as persistent systemd service (auto-restart on reboot) | completed: 2026-03-21 | discord_sent: true
+- [x] Initialize git repo for pulseops-studio, create GitHub repo (jonskalski/pulseops-studio), push | completed: 2026-03-21 | discord_sent: true
+- [x] Schedule topic_picker.py cron (3am EDT daily) | completed: 2026-03-21 | discord_sent: true
+- [x] Schedule pillar_suggester.py cron (9am EDT Mondays) | completed: 2026-03-21 | discord_sent: true
+- [x] Create SYSTEM.md — full usage map of all scripts, data flows, env vars, crons | completed: 2026-03-21 | discord_sent: true
+- [x] Add auto-push to git at end of /summarize (Step 7c) | completed: 2026-03-21 | discord_sent: true
+- [x] Add SYSTEM.md structural update check to /summarize (Step 7d) | completed: 2026-03-21 | discord_sent: true
+- [x] Run pillar_planner.py for CRMs for Small Business Beginners — 21 clusters generated, written to Airtable + Discord | completed: 2026-03-21 | discord_sent: true
+- [x] Fix load_dotenv override=True in pillar_planner.py so new API key is picked up | completed: 2026-03-21 | discord_sent: true
+- [x] Add Clusters Created + Clusters Published fields to Pillars table | completed: 2026-03-21 | discord_sent: true
+- [x] Add Summary field to Pillars table, backfilled all 6 records | completed: 2026-03-21 | discord_sent: true
+- [x] Build pillar_suggester.py — Claude suggests 5 pillars, saves to Airtable as Suggested, posts to Discord | completed: 2026-03-21 | discord_sent: true
+- [x] Update discord_bot.py to handle Pillar Suggestion reactions (✅ fires pillar_planner, ❌ marks Rejected) | completed: 2026-03-21 | discord_sent: true
+- [x] Add Suggested + Rejected status options to Pillars table | completed: 2026-03-21 | discord_sent: true
+- [x] Build pillar_planner.py — generates 20 cluster titles grouped by angle, writes to Airtable + Discord | completed: 2026-03-21 | discord_sent: true
+- [x] Set up Airtable tables: Content Ideas, Pillars, Clusters, Social Posts | completed: 2026-03-21 | discord_sent: true
+- [x] Wire Airtable into pipeline.py, topic_picker.py, discord_bot.py | completed: 2026-03-21 | discord_sent: true
+- [x] Backfill 13 published WP posts into Airtable Content Ideas | completed: 2026-03-21 | discord_sent: true
+- [x] Add WP auto-scheduling to pipeline.py (Mon-Fri 9am EST, SKIP_DATES support) | completed: 2026-03-21 | discord_sent: true
+- [x] Remove ANTHROPIC_API_KEY from ~/.bashrc so Claude Code sessions bill to Pro | completed: 2026-03-21 | discord_sent: true
 - [x] Expand voice target examples in 03_draft.md and 05_polish.md to 10 examples, add coffee-test sentence, flag competent-but-bland as fail in Polish agent | completed: 2026-03-19 | discord_sent: true
 - [x] Post all 5 topics to Discord from topic_picker.py | completed: 2026-03-19 | discord_sent: true
 - [x] Save all 5 topic picks to runs/topic_picks/ JSON | completed: 2026-03-19 | discord_sent: true
