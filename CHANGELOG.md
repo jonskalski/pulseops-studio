@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-03-21 — Pillar system, Airtable fields, GitHub setup
+
+### pillar_planner.py
+- Added `load_dotenv(override=True)` to fix stale env var issue where old API key was cached in shell
+- Added `sync_pillar_stats()` call after cluster creation to update Clusters Created/Published counts
+- First successful run: CRMs for Small Business Beginners — 21 clusters generated
+
+### pillar_suggester.py (new)
+- Asks Claude to suggest 5 content pillars, avoids existing ones, posts to Discord as Pillar Suggestions, saves to Airtable as Suggested with Summary field
+
+### discord_bot.py
+- Added Pillar Suggestion detection — ✅ fires pillar_planner.py and sets status to Planning, ❌ sets status to Rejected
+
+### airtable/client.py
+- Added `sync_pillar_stats(pillar_name)` — counts clusters total + published, updates Pillars record
+- `mark_cluster_published()` now calls `sync_pillar_stats()` automatically
+- New Airtable fields: Clusters Created, Clusters Published, Summary
+- Pillars Status options expanded: added Suggested, Rejected
+
+### Git + /summarize skill
+- Initialized repo, pushed to github.com/jonskalski/pulseops-studio
+- /summarize skill updated to auto-push at end of every session (Step 7c)
+
+### ROADMAP.md
+- Updated Current State checklist, Pillars schema, and Pillar Brief Flow to reflect live state
+
 ## 2026-03-19
 
 ### agents/04_edit.md + agents/06_approver.md — Scenario thread rule relaxed
