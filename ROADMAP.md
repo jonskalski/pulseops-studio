@@ -31,9 +31,9 @@ Suggested → Approved → In Queue → Draft Ready → Published
 - **Expired** — hot topics only, window closed
 
 ### Pillar → Cluster Model
-- You inject a Pillar topic via `#pillar-topics` Discord channel
-- System generates a brief + 20 cluster topic suggestions (grouped by angle)
-- You react ✅ to approve the pillar → written to Airtable
+- `pillar_suggester.py` — Claude suggests 5 new pillars based on site niche + existing pillars, posts to Discord as **Pillar Suggestions**, saves to Airtable as `Suggested`
+- React ✅ on a Pillar Suggestion → status flips to `Planning`, fires `pillar_planner.py` automatically
+- `pillar_planner.py` generates 20+ cluster titles grouped by angle → creates Pillar + Cluster records in Airtable, posts brief to Discord
 - You approve individual clusters in Airtable
 - Clusters publish on cadence (2-3/week per pillar, rotate between active pillars)
 - You manually flip `Generate Pillar` checkbox when cluster set feels complete
@@ -70,9 +70,11 @@ Suggested → Approved → In Queue → Draft Ready → Published
 | Field | Type | Notes |
 |---|---|---|
 | Name | Text | e.g. "CRM Basics" |
-| Status | Select | Planning → Active → Ready → Published |
+| Status | Select | Suggested → Planning → Active → Ready → Published / Rejected |
+| Summary | Text | One-paragraph description of the pillar strategy |
+| Clusters Created | Number | Auto-updated by sync_pillar_stats() on each pillar_planner run |
+| Clusters Published | Number | Auto-updated by sync_pillar_stats() on each cluster publish |
 | Target Clusters | Number | Default 20 |
-| Clusters Published | Rollup | Count from Clusters table |
 | Generate Pillar | Checkbox | You flip when ready |
 | Pillar Post URL | Text | WP URL after publish |
 
@@ -98,9 +100,15 @@ Suggested → Approved → In Queue → Draft Ready → Published
 ### Current State
 - [x] Blog pipeline working (01_outline → 02_research → 03_draft → 04_edit → 05_polish → 06_approver)
 - [x] Hot topic picker (topic_picker.py) — manual trigger
-- [x] Discord bot watching ✅/❌ reactions → fires pipeline
+- [x] Discord bot watching ✅/❌ reactions → fires pipeline or pillar_planner
 - [x] 3-attempt escalating retry logic
 - [x] NEEDS_REVIEW.md fallback
+- [x] Airtable fully wired: Content Ideas, Pillars, Clusters, Social Posts tables
+- [x] Pillar planner (pillar_planner.py) — generates cluster map, writes to Airtable + Discord
+- [x] Pillar suggester (pillar_suggester.py) — Claude suggests pillars, Discord approval flow
+- [x] WP auto-scheduling (Mon-Fri 9am EST, SKIP_DATES support)
+- [x] Git repo initialized + pushed to GitHub (github.com/jonskalski/pulseops-studio)
+- [x] /summarize auto-pushes to git at end of session
 
 ### Scheduling (all times EST)
 | Job | Cron | Notes |
@@ -134,13 +142,12 @@ Suggested → Approved → In Queue → Draft Ready → Published
 - Discord node posts result back
 - _Benefit: modify trigger logic without touching Python_
 
-### Pillar Brief Flow (`#pillar-topics` channel)
-1. You post a pillar idea in Discord
-2. n8n catches it → calls Claude → generates brief (pitch + 20 cluster suggestions grouped by angle)
-3. Brief posted back to Discord — tight enough to read in 30 seconds on mobile
-4. ✅ → pillar + clusters written to Airtable as Suggested
-5. You approve/trim clusters in Airtable
-6. Pipeline picks up Approved clusters on cadence
+### Pillar Brief Flow (BUILT)
+1. Run `pillar_suggester.py` → Claude suggests 5 pillars → posted to Discord as Pillar Suggestions
+2. React ✅ → `pillar_planner.py` fires automatically → generates 20+ clusters grouped by angle
+3. Clusters written to Airtable, brief posted to Discord
+4. You approve/trim clusters in Airtable
+5. Pipeline picks up Approved clusters on cadence
 
 ---
 
