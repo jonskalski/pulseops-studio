@@ -302,7 +302,7 @@ def run_pipeline(topic, why=None):
     discord(f"⏳ Step 4/6 — Edit Agent running...")
     edited = run_agent("04_edit", f"Draft:\n{json.dumps(draft, indent=2)}", run_dir)
     edit_notes = edited.get('edit_notes', []) if isinstance(edited, dict) else []
-    notes_preview = "\n".join(f"  - {n[:100]}" for n in edit_notes[:3])
+    notes_preview = "\n".join(f"  - {n[:200]}" for n in edit_notes[:3])
     discord(f"✅ Step 4/6 — Edit complete ({len(edit_notes)} edits)\n{notes_preview}")
 
     # ── Step 5 & 6: Polish + Approve — 3-attempt escalating retry ────────
@@ -318,7 +318,7 @@ def run_pipeline(topic, why=None):
         discord(f"⏳ Polish — {attempt_label}...")
         p = run_agent("05_polish", f"Post:\n{json.dumps(post_input, indent=2)}", run_dir)
         polish_notes = p.get('polish_notes', []) if isinstance(p, dict) else []
-        notes_preview = "\n".join(f"  - {n[:100]}" for n in polish_notes[:3]) if polish_notes else "  (no notes)"
+        notes_preview = "\n".join(f"  - {n[:200]}" for n in polish_notes[:3]) if polish_notes else "  (no notes)"
         discord(f"✅ Polish complete — {attempt_label}\n{notes_preview}")
         discord(f"🔍 Approver reviewing — {attempt_label}...")
         a = run_agent("06_approver", f"Post:\n{json.dumps(p, indent=2)}", run_dir)

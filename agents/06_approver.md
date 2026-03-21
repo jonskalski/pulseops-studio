@@ -29,12 +29,7 @@ Review the polished post against these criteria. Be specific in your feedback â€
 - Does the intro hook land in the first 2 sentences?
 - Does the conclusion have a real takeaway?
 - Is the post 1,500-2,000 words? Hard fail if outside this range. Count carefully.
-
-### Scenario (Pass/Fail)
-- Determine whether the post uses threaded or hypothetical mode (look for a recurring business situation across sections, or second-person framing only).
-- **Threaded mode**: Does the scenario appear in the intro, the conclusion, and at least 2 body sections where it fits naturally? A middle section that reads in generic second-person is acceptable. Only FAIL if the scenario is absent from the intro, absent from the conclusion, or appears fewer than 2 times total in the body. Do not fail a post for having one generic section in the middle.
-- **Hypothetical mode**: Are there any named or described fictional characters or businesses (e.g. "Sarah's agency", "a business we'll call Acme")? If yes, FAIL. Quote the specific instance.
-- If neither mode is detectable or the post mixes both inconsistently, FAIL and flag it.
+- Examples: any illustrative examples are brief, unnamed, and grounding rather than storytelling. No fictional characters, no biography.
 
 ## Decision
 - If ALL criteria pass: APPROVE
@@ -49,8 +44,7 @@ Return ONLY valid JSON:
     "headers": "pass" or "fail",
     "value": "pass" or "fail",
     "seo": "pass" or "fail",
-    "structure": "pass" or "fail",
-    "scenario": "pass" or "fail"
+    "structure": "pass" or "fail"
   },
   "comments": "specific feedback if DENIED â€” name the exact section header or quote the specific sentence that needs to change"
 }

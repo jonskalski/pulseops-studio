@@ -114,3 +114,49 @@ Root cause: a published post came out competent but generic. Voice ceiling wasn'
 - Voice target (pass) examples expanded from 3-5 to 10 to better define the warmer, more absurdist register matching established brand tone. New examples cover the "slightly tired knowledgeable friend" end of the spectrum — self-deprecating, a little absurd, still genuinely useful. Reference post: /ai-automation-smb-guide/.
 - Added test sentence after examples: "The test: would a slightly tired, knowledgeable friend say this over coffee? If it sounds like a press release or a pep talk, rewrite it."
 - **05_polish.md only:** Polish agent task instructions updated to flag competent-but-bland as an explicit fail condition. "Warm and a little absurdist beats dry and restrained."
+
+## 2026-03-21 — Removed threaded scenario system
+
+Removed the threaded scenario system from all agents. Second-person is now the only mode. Brief one-sentence unnamed examples replace the threaded scenario approach.
+
+**Changed files:** 02_research.md, 03_draft.md, 04_edit.md, 06_approver.md, CLAUDE.md
+
+**Reason:** Threaded scenarios created distance between the reader and the advice. The setup felt performative. Second-person direct address is more confident and reads faster. The fake-case-study problem is solved by keeping examples to one sentence with no names or biography, not by building a narrative thread.
+
+## 2026-03-21 — #write-this channel, .env fixes, agent overhaul
+
+### discord_bot.py
+- Added on_message listener watching WRITE_THIS_CHANNEL_ID (1484742781514682368)
+- Added extract_topic_from_url() — scrapes URL, asks Claude for SMB topic + why context
+- Added stderr logging for pipeline subprocess (was silently failing)
+- Installed beautifulsoup4 for URL scraping
+- Killed old tmux bot instance (was competing with systemd bot, stealing events)
+
+### .env
+- Added DISCORD_WEBHOOK_URL (was missing — caused silent pipeline failures)
+- Added WP_USER, WP_APP_PASSWORD, WP_URL (were missing — caused all WP publishes to fail silently)
+
+### agents/02_research.md
+- Removed scenario_mode decision system entirely
+- Removed scenario_mode, scenario_seed, scenario_details from output JSON
+- Added ## Examples section: brief unnamed one-sentence grounding examples only
+
+### agents/03_draft.md
+- Removed ## Scenario Handling section
+- Added ## Examples and Grounding: second-person throughout, brief unnamed examples
+- Banned &mdash; HTML entity alongside — character
+- Raised target length to 1,700-2,000 words (was 1,500-2,000)
+
+### agents/04_edit.md
+- Replaced scenario thread check with simple examples check (one sentence, unnamed, grounding)
+
+### agents/05_polish.md
+- Added &mdash; HTML entity to em dash ban
+- Added word count check: expand if under 1,550 words before passing to Approver
+
+### agents/06_approver.md
+- Removed scenario from scores object
+- Moved examples check under Structure criteria
+
+### pipeline.py
+- Bumped note truncation from 100 to 200 chars (Polish and Edit notes)

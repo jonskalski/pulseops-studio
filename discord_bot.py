@@ -7,9 +7,11 @@ Run permanently: python3 discord_bot.py
 
 import os
 import re
+import json
 import requests
 import discord
 import sys
+from bs4 import BeautifulSoup
 sys.path.insert(0, "/root/pulseops-studio")
 from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
@@ -22,6 +24,7 @@ except Exception:
 
 BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
 TOPICS_CHANNEL_ID = 1484068137547599893
+WRITE_THIS_CHANNEL_ID = 1484742781514682368
 N8N_WEBHOOK_URL = "https://n8n.srv1491199.hstgr.cloud/webhook/pulseops-reaction"
 
 intents = discord.Intents.default()
@@ -105,6 +108,86 @@ async def on_reaction_add(reaction, user):
             if why:
                 cmd += ["--why", why]
         subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+def extract_topic_from_url(url, extra_context=""):
+    resp = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+    soup = BeautifulSoup(resp.text, "html.parser")
+
+    title = soup.find("title")
+    title_text = title.text.strip() if title else ""
+    meta = soup.find("meta", {"name": "description"})
+    desc_text = meta.get("content", "") if meta else ""
+    paragraphs = " ".join(p.get_text() for p in soup.find_all("p")[:5])
+
+    page_content = f"Title: {title_text}\nDescription: {desc_text}\nContent: {paragraphs[:1000]}"
+    if extra_context:
+        page_content += f"\nUser note: {extra_context}"
+
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    response = requests.post(
+        "https://api.anthropic.com/v1/messages",
+        headers={
+            "x-api-key": api_key,
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json"
+        },
+        json={
+            "model": "claude-haiku-4-5-20251001",
+            "max_tokens": 200,
+            "messages": [{
+                "role": "user",
+                "content": f"Given this article, suggest a blog post topic for an SMB audience and a 1-2 sentence why-this-matters context.\n\nRespond in JSON only: {{\"topic\": \"...\", \"why\": \"...\"}}\n\n{page_content}"
+            }]
+        }
+    )
+    text = response.json()["content"][0]["text"]
+    data = json.loads(re.search(r'\{.*\}', text, re.DOTALL).group(0))
+    return data["topic"], data["why"]
+
+
+@client.event
+async def on_message(message):
+    if message.author.bot:
+        return
+    if message.channel.id != WRITE_THIS_CHANNEL_ID:
+        return
+
+    content = message.content.strip()
+    if not content:
+        return
+
+    import subprocess
+    url_match = re.match(r'https?://\S+', content)
+
+    if url_match:
+        url = url_match.group(0)
+        extra = content[len(url):].strip()
+        await message.channel.send(f"Scraping <{url}>...")
+        try:
+            topic, why = extract_topic_from_url(url, extra)
+        except Exception as e:
+            await message.channel.send(f"Couldn't scrape that URL: {e}")
+            return
+    else:
+        topic = content
+        why = None
+
+    await message.channel.send(f"Got it. Running pipeline for: **{topic}**")
+    cmd = ["python3", "/root/pulseops-studio/pipeline.py", topic]
+    if why:
+        cmd += ["--why", why]
+    try:
+        proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+        import threading
+        def log_stderr(p):
+            out = p.stderr.read()
+            if out:
+                print(f"[pipeline stderr] {out.decode()}", flush=True)
+        threading.Thread(target=log_stderr, args=(proc,), daemon=True).start()
+    except Exception as e:
+        await message.channel.send(f"Failed to start pipeline: {e}")
+        print(f"[pipeline launch error] {e}", flush=True)
+
 
 if __name__ == "__main__":
     if not BOT_TOKEN:

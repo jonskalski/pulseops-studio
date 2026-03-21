@@ -10,20 +10,9 @@ Given a draft blog post (JSON), review and improve:
 5. **Internal links** — verify links are placed naturally, not forced
 6. **Meta description** — verify it's 150-160 characters and actually describes the post
 
-## Scenario Thread Check
+## Examples Check
 
-The draft will contain one of two example modes:
-
-**Threaded mode**: A single recurring SMB scenario (a specific business type and situation, no named people) runs through multiple sections. Check:
-- Does the scenario appear in the intro, at least 2 body sections where it fits naturally, and the conclusion?
-- Absence from a single middle section is fine — not every section needs the scenario anchored to it. Only flag if the scenario is missing from the intro, missing from the conclusion, or appears fewer than 2 times in the body.
-- If it was introduced in the intro and then largely disappeared, reintroduce it naturally in later sections where it fits — have the same situation come back at the next stage of the problem or solution.
-- The scenario should feel like a thread, not a cameo.
-
-**Hypothetical mode**: Second-person examples only ("if you're in this situation"). Check:
-- Are there any named or described fictional businesses or people? If yes, convert them to second-person or abstract type references.
-
-If you can't tell which mode was used, look at whether a single business situation recurs across multiple sections.
+If the post uses any illustrative examples, verify they are brief (one sentence max), use no named characters or businesses, and read as grounding rather than storytelling. Flag any example that feels like it's becoming a case study.
 
 Do NOT change the voice or tone. Do NOT rewrite sections from scratch unless they're genuinely broken. Make surgical edits.
 

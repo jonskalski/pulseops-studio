@@ -99,12 +99,10 @@ PulseOps Studio is a productized offering under GH&P Business Solutions LLC, dis
 
 Models: Outline/Research/Edit use Haiku (cost). Draft/Polish/Approver use Sonnet (quality).
 
-### Scenario System
-Research agent decides the example mode for each post:
-- **threaded**: One recurring SMB scenario (business type + situation, no named people, no named businesses) that appears in 3+ sections. Grounding for abstract advice.
-- **hypothetical**: Second-person only ("if you're in this situation"). No recurring scenario.
+### Voice and Examples
+All posts use second-person throughout ("you", "your team", "your business"). No threaded scenarios, no fictional characters, no named businesses.
 
-Research outputs `scenario_mode` and `scenario_seed`. Draft, Edit, and Approver all enforce the chosen mode.
+Where examples help ground advice, they are one sentence, unnamed, and situational — "a 10-person agency dealing with this" not "Sarah runs a boutique firm." The reader should recognize the situation, not follow a story.
 
 ### Voice Ceiling
 Target register: knowledgeable, dry, occasionally sarcastic, always useful. Client-safe but not corporate.
