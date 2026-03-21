@@ -10,6 +10,8 @@ _How the whole thing works: what runs, when, where, and why._
 RSS Feeds ──► topic_picker.py ──► Discord #topics ──► discord_bot.py ──► pipeline.py ──► WordPress
                                                                       └──► pillar_planner.py ──► Airtable Clusters
 
+You (phone/Discord) ──► #write-this (topic or URL) ──► discord_bot.py ──► pipeline.py ──► WordPress
+
 pillar_suggester.py ──► Discord #topics ──► discord_bot.py ──► pillar_planner.py ──► Airtable Clusters
 ```
 
@@ -37,16 +39,18 @@ pillar_suggester.py ──► Discord #topics ──► discord_bot.py ──►
 ### `discord_bot.py`
 | | |
 |---|---|
-| **What** | Persistent bot watching Discord reactions, routing approvals to the right script |
-| **When** | Always running (should be systemd service — not yet set up) |
-| **Trigger** | ✅ / ❌ / 🔁 reactions in `#topics` channel |
+| **What** | Persistent bot: watches reactions in #topics + messages in #write-this |
+| **When** | Always running as systemd service (pulseops-bot.service) |
+| **Trigger 1** | ✅ / ❌ / 🔁 reactions in `#topics` channel |
+| **Trigger 2** | Any message in `#write-this` channel (channel ID: 1484742781514682368) |
 | **Reads** | Discord message content (parses topic/pillar name + why from message format) |
-| **Writes** | Fires `pipeline.py <topic> --why "..."` on ✅ Topic Suggestion |
+| **Writes** | Fires `pipeline.py <topic> --why "..."` on ✅ Topic Suggestion or #write-this message |
 | **Writes** | Fires `pillar_planner.py "<pillar>"` on ✅ Pillar Suggestion |
 | **Writes** | Airtable Content Ideas: mark_approved / mark_skipped / mark_regenerate |
 | **Writes** | Airtable Pillars: Planning (on ✅) / Rejected (on ❌) |
 | **Writes** | `runs/pending_topics.txt` (removes topic on ❌ or 🔁) |
-| **Why** | Mobile-first approval — react from phone, pipeline fires on the server |
+| **Why** | Mobile-first: react to suggestions or drop a topic/URL in #write-this from your phone |
+| **#write-this** | Plain text = topic. URL = bot scrapes page, Claude extracts SMB topic + why, fires pipeline. Optional note after URL adds context. |
 
 ---
 
