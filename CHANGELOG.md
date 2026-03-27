@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-03-27 — Rejected post workflow spec written
+
+### SPEC-rejected-post-workflow.md
+- New spec created: documents the rejected post Airtable logging flow and post-mortem agent design
+
 ## 2026-03-21 — Pillar system, Airtable fields, GitHub setup
 
 ### pillar_planner.py
