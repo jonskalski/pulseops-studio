@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-03-28 — Fixed Discord topic posting, overhauled RSS feeds
+
+### .env
+- Added `DISCORD_TOPICS_WEBHOOK_URL` — was missing, causing daily topics to generate silently with no Discord delivery
+
+### topic_picker.py
+- Replaced broken feeds (Zapier malformed XML, Beehiiv empty) and AI-heavy feeds (Ars Technica, Verge) with SMB-focused sources: Search Engine Land, Inc.com, Moz, Convince & Convert
+- Added prompt guardrail: no more than 2 AI topics per batch, at least 3 must be non-AI SMB topics
+
 ## 2026-03-27 — Rejected post workflow spec written
 
 ### SPEC-rejected-post-workflow.md

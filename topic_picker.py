@@ -29,16 +29,17 @@ SONNET = "claude-sonnet-4-6"
 # ── RSS Feeds ────────────────────────────────────────────────────────────────
 # SMB-native sources listed first so they get weighted first in headlines Claude sees
 RSS_FEEDS = [
-    "https://blog.zapier.com/feed/",                         # Zapier (automation/SMB)
     "https://blog.hubspot.com/marketing/rss.xml",            # HubSpot Marketing
     "https://www.smallbiztrends.com/feed",                   # Small Biz Trends
     "https://www.searchenginejournal.com/feed/",             # Search Engine Journal
+    "https://searchengineland.com/feed",                     # Search Engine Land
+    "https://www.inc.com/rss",                               # Inc.com
+    "https://moz.com/blog/feed",                             # Moz (SEO/marketing)
+    "https://www.convinceandconvert.com/feed/",              # Convince & Convert (marketing)
+    "https://neilpatel.com/blog/feed/",                      # Neil Patel (SEO/marketing)
+    "https://www.socialmediaexaminer.com/feed/",             # Social Media Examiner
     "https://feeds.feedburner.com/venturebeat/SZYF",        # VentureBeat AI
     "https://techcrunch.com/feed/",                          # TechCrunch
-    "https://www.theverge.com/rss/index.xml",               # The Verge
-    "https://feeds.arstechnica.com/arstechnica/index",      # Ars Technica
-    "https://www.zdnet.com/news/rss.xml",                   # ZDNet
-    "https://rss.beehiiv.com/feeds/vur2EFxsKo.xml",        # The Rundown AI
 ]
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -178,6 +179,8 @@ Avoid:
 - Pure consumer tech (gaming, phones, social media drama)
 - Highly technical developer topics (unless there's a clear SMB angle)
 - Topics already covered in the existing posts list
+
+Important: No more than 2 of the 5 topics should be AI-focused. At least 3 must cover non-AI areas like marketing, operations, sales, finance, hiring, productivity, or tools for SMBs.
 
 Return ONLY valid JSON — an array of 5 objects:
 [

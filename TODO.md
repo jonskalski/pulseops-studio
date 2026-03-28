@@ -4,7 +4,7 @@
 - [ ] Install glow for terminal markdown rendering
 - [ ] Set up filebrowser for web-based file browsing (accessible from any device)
 - [ ] Set up AdSense account (need ~6-8 weeks of consistent publishing first)
-- [ ] Run topic_picker.py end-to-end to test all 5 topics posting + pending_topics.txt dedup
+- [x] Run topic_picker.py end-to-end to test all 5 topics posting + pending_topics.txt dedup | completed: 2026-03-28 | discord_sent: true
 - [x] Test full pipeline with --why flag passed from Discord bot | completed: 2026-03-21 | discord_sent: true
 - [ ] Create Discord #drafts channel + get webhook URL
 - [ ] Create Discord #pillar-topics channel + get webhook URL
