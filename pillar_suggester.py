@@ -101,7 +101,8 @@ def save_to_airtable(suggestions):
             if s["pillar"].lower() in existing_names:
                 print(f"  Skipped (exists): {s['pillar']}")
                 continue
-            _create(TABLE_PILLARS, {"Name": s["pillar"], "Status": "Suggested", "Summary": s["why"]})
+            from datetime import date
+            _create(TABLE_PILLARS, {"Name": s["pillar"], "Status": "Suggested", "Summary": s["why"], "Suggested Date": date.today().isoformat()})
             print(f"  Saved to Airtable: {s['pillar']}")
             created += 1
         return created

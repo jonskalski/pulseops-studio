@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-03-31 — Added date tracking fields to all Airtable tables
+
+### airtable/client.py
+- Added `Suggested Date` (today's date) to `create_suggested()` and `create_cluster()`
+- Added `Published Date` (today's date) to `mark_published()` and `mark_cluster_published()`
+- Backfilled all 85 existing records: Suggested Date from Airtable createdTime, Published Date from WordPress API for 15 published posts
+
+### pillar_suggester.py
+- Added `Suggested Date` to pillar creation in `save_to_airtable()`
+
+### Airtable (via API)
+- Added `Suggested Date` and `Published Date` Date fields to Content Ideas table
+- Added `Suggested Date` to Pillars table
+- Added `Suggested Date` and `Published Date` to Clusters table
+
 ## 2026-03-28 — Fixed Discord topic posting, overhauled RSS feeds
 
 ### .env

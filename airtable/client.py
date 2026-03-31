@@ -61,6 +61,7 @@ def _find_by_topic(topic):
 
 def create_suggested(topic, why=None, post_type="Standalone"):
     """Called by topic_picker.py when a topic is posted to Discord."""
+    from datetime import date
     existing = _find_by_topic(topic)
     if existing:
         return existing
@@ -69,6 +70,7 @@ def create_suggested(topic, why=None, post_type="Standalone"):
         "Type": post_type,
         "Status": "Suggested",
         "Priority": "Normal",
+        "Suggested Date": date.today().isoformat(),
         **({"Why": why} if why else {}),
     })
 
@@ -96,12 +98,14 @@ def mark_regenerate(topic):
 
 def mark_published(topic, wp_post_id, wp_post_url):
     """Called by pipeline.py after successful WP publish."""
+    from datetime import date
     rec = _find_by_topic(topic)
     if rec:
         return _update(TABLE_CONTENT, rec["id"], {
             "Status": "Published",
             "WP Post ID": str(wp_post_id),
             "WP Post URL": wp_post_url,
+            "Published Date": date.today().isoformat(),
         })
 
 
@@ -119,17 +123,20 @@ def sync_pillar_stats(pillar_name):
 
 def create_cluster(title, pillar_name, angle=None, priority="Normal"):
     """Create a cluster post under a pillar."""
+    from datetime import date
     return _create(TABLE_CLUSTERS, {
         "Title": title,
         "Parent Pillar": pillar_name,
         "Status": "Suggested",
         "Priority": priority,
+        "Suggested Date": date.today().isoformat(),
         **({"Angle": angle} if angle else {}),
     })
 
 
 def mark_cluster_published(title, wp_post_id, wp_post_url):
     """Flip cluster status to Published after WP post goes live."""
+    from datetime import date
     records = _get(TABLE_CLUSTERS, {"filterByFormula": f'LOWER({{Title}}) = LOWER("{title}")'})
     if records:
         rec = records[0]
@@ -137,6 +144,7 @@ def mark_cluster_published(title, wp_post_id, wp_post_url):
             "Status": "Published",
             "WP Post ID": str(wp_post_id),
             "WP Post URL": wp_post_url,
+            "Published Date": date.today().isoformat(),
         })
         pillar_name = rec["fields"].get("Parent Pillar")
         if pillar_name:

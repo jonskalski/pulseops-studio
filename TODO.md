@@ -20,6 +20,7 @@
 - [ ] Build buffer system (10 evergreen safety posts, auto-refill logic)
 - [ ] Build draft review flow (WP draft → Discord notify → ✅/❌/🔁 → publish or fallback)
 - [ ] Build 8pm approval reminder (n8n)
+- [x] Add Suggested Date + Published Date fields to Content Ideas, Pillars, Clusters tables in Airtable | completed: 2026-03-31 | discord_sent: true
 - [ ] Add Suggested/Rejected status options to Clusters table in Airtable
 
 ## Completed
