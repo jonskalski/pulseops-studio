@@ -25,6 +25,7 @@ RUNS_DIR.mkdir(exist_ok=True)
 
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 WP_URL = os.environ.get("WP_URL", "https://pulseops.us")
+POSTS_INDEX_FILE = BASE_DIR / "published_posts_index.json"
 WP_USER = os.environ.get("WP_USER")
 WP_APP_PASSWORD = os.environ.get("WP_APP_PASSWORD")
 DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL")
@@ -52,6 +53,98 @@ AGENT_MODELS = {
     "05_polish": SONNET,
     "06_approver": SONNET,
 }
+
+# ── Posts Index ─────────────────────────────────────────────────────────────
+
+def load_posts_index():
+    """Load local published posts index (title, url, slug, topic)."""
+    if POSTS_INDEX_FILE.exists():
+        try:
+            return json.loads(POSTS_INDEX_FILE.read_text())
+        except Exception:
+            return []
+    return []
+
+def update_posts_index(title, url, slug, topic):
+    """Add a newly published post to the local index."""
+    index = load_posts_index()
+    index = [p for p in index if p.get("slug") != slug]  # remove if exists
+    index.append({
+        "title": title,
+        "url": url,
+        "slug": slug,
+        "topic": topic,
+        "published_date": datetime.now().strftime("%Y-%m-%d"),
+    })
+    POSTS_INDEX_FILE.write_text(json.dumps(index, indent=2))
+
+# ── Schema Markup ────────────────────────────────────────────────────────────
+
+def generate_schema_markup(post_data, pub_date_str=""):
+    """Generate JSON-LD schema. Defaults to Article, upgrades to HowTo or FAQPage."""
+    content = post_data.get("content", "")
+    title = post_data.get("title", "")
+    title_lower = title.lower()
+    date_str = pub_date_str[:10] if pub_date_str else datetime.now().strftime("%Y-%m-%d")
+
+    # FAQPage: H2 headers that end in a question mark
+    has_faq = bool(re.search(r'<h2[^>]*>[^<]*\?[^<]*</h2>', content, re.IGNORECASE))
+    if has_faq:
+        qa_pairs = []
+        for m in re.finditer(
+            r'<h2[^>]*>([^<]*\?[^<]*)</h2>\s*<p>(.*?)</p>',
+            content, re.IGNORECASE | re.DOTALL
+        ):
+            question = re.sub(r'<[^>]+>', '', m.group(1)).strip()
+            answer = re.sub(r'<[^>]+>', '', m.group(2)).strip()[:300]
+            if question and answer:
+                qa_pairs.append({"question": question, "answer": answer})
+        if qa_pairs:
+            schema = {
+                "@context": "https://schema.org",
+                "@type": "FAQPage",
+                "mainEntity": [
+                    {
+                        "@type": "Question",
+                        "name": q["question"],
+                        "acceptedAnswer": {"@type": "Answer", "text": q["answer"]},
+                    }
+                    for q in qa_pairs
+                ],
+            }
+            return f'\n<script type="application/ld+json">\n{json.dumps(schema, indent=2)}\n</script>'
+
+    # HowTo: title signals step-by-step instructional content
+    howto_signals = ["how to ", "step-by-step", "steps to ", "guide to "]
+    if any(s in title_lower for s in howto_signals):
+        steps = []
+        for i, m in enumerate(
+            re.finditer(r'<li[^>]*>(.*?)</li>', content, re.IGNORECASE | re.DOTALL), 1
+        ):
+            text = re.sub(r'<[^>]+>', '', m.group(1)).strip()
+            if text and len(text) > 20:
+                steps.append({"@type": "HowToStep", "position": i, "text": text[:200]})
+            if len(steps) >= 10:
+                break
+        if steps:
+            schema = {
+                "@context": "https://schema.org",
+                "@type": "HowTo",
+                "name": title,
+                "step": steps,
+            }
+            return f'\n<script type="application/ld+json">\n{json.dumps(schema, indent=2)}\n</script>'
+
+    # Default: Article
+    schema = {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": title,
+        "author": {"@type": "Organization", "name": "PulseOps"},
+        "datePublished": date_str,
+        "publisher": {"@type": "Organization", "name": "PulseOps", "url": WP_URL},
+    }
+    return f'\n<script type="application/ld+json">\n{json.dumps(schema, indent=2)}\n</script>'
 
 # ── Scheduling ──────────────────────────────────────────────────────────────
 
@@ -207,14 +300,19 @@ def publish_to_wordpress(post_data, keyword=None):
 
     # Inject image into content after first paragraph
     content = post_data["content"]
+    alt_text = keyword or search_term  # keyword-descriptive alt text, not post title
     if uploaded_image_url and "</p>" in content:
         img_html = (
             f'<figure class="wp-block-image size-large">'
-            f'<img src="{uploaded_image_url}" alt="{post_data["title"]}" />'
+            f'<img src="{uploaded_image_url}" alt="{alt_text}" />'
             f'</figure>'
         )
         insert_at = content.index("</p>") + 4
         content = content[:insert_at] + "\n" + img_html + "\n" + content[insert_at:]
+
+    # Append JSON-LD schema markup
+    pub_date = next_publish_slot()
+    content = content + generate_schema_markup(post_data, pub_date)
 
     endpoint = f"{WP_URL}/wp-json/wp/v2/posts"
     payload = {
@@ -223,7 +321,7 @@ def publish_to_wordpress(post_data, keyword=None):
         "content": content,
         "excerpt": post_data.get("meta_description", ""),
         "status": "future",
-        "date": next_publish_slot(),
+        "date": pub_date,
         "author": 257061572,
     }
     if featured_media_id:
@@ -259,16 +357,39 @@ def run_pipeline(topic, why=None):
 
     discord(f"🚀 **Studio Pipeline Started**\n**Topic:** {topic}\n**Run:** {run_dir.name}")
 
+    # ── Keyword cannibalization check ─────────────────────────────────────
+    existing_index = load_posts_index()
+    topic_lower = topic.lower()
+    conflicts = [
+        p for p in existing_index
+        if p.get("topic") and p["topic"].lower() in topic_lower or topic_lower in p.get("topic", "").lower()
+        or any(word in p["title"].lower() for word in topic_lower.split() if len(word) > 4)
+    ]
+    if conflicts:
+        conflict_list = "\n".join(f"  - {p['title']} [{p.get('topic','')}] → {p.get('url','')}" for p in conflicts[:3])
+        discord(f"⚠️ **Cannibalization warning** — existing posts may target the same keyword:\n{conflict_list}\nContinuing anyway.")
+
     # ── Fetch existing posts for internal linking ─────────────────────────
+    # Local index has topic/keyword data; WP API fills in any gaps
+    local_index = load_posts_index()
+    local_slugs = {p["slug"] for p in local_index}
     try:
         wp_posts = requests.get(
             f"{WP_URL}/wp-json/wp/v2/posts",
             params={"per_page": 100, "status": "publish", "_fields": "title,slug"},
             timeout=15,
         ).json()
-        existing_posts = [{"title": p["title"]["rendered"], "slug": p["slug"]} for p in wp_posts]
-        posts_context = "\n".join([f"- {p['title']} → /{p['slug']}/" for p in existing_posts])
+        for p in wp_posts:
+            if p["slug"] not in local_slugs:
+                local_index.append({"title": p["title"]["rendered"], "slug": p["slug"], "topic": ""})
     except Exception:
+        pass
+    if local_index:
+        posts_context = "\n".join([
+            f"- {p['title']}" + (f" [{p['topic']}]" if p.get("topic") else "") + f" → /{p['slug']}/"
+            for p in local_index
+        ])
+    else:
         posts_context = ""
 
     # ── Step 1: Outline ──────────────────────────────────────────────────
@@ -400,6 +521,13 @@ def run_pipeline(topic, why=None):
         discord(f"🎉 **Scheduled!**\n**URL:** {post_url}\n**Title:** {polished.get('title')}\n**Publishes:** {pub_date[:10]}")
         print(f"\n✅ Scheduled: {post_url}")
         (run_dir / "published.json").write_text(json.dumps(result, indent=2))
+        # ── Update posts index ────────────────────────────────────────────
+        update_posts_index(
+            polished.get("title", topic),
+            post_url,
+            polished.get("slug", ""),
+            keyword,
+        )
         # ── Airtable update ──────────────────────────────────────────────
         try:
             from airtable.client import mark_published

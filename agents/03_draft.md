@@ -77,6 +77,20 @@ Where to place it: anywhere mid-post feels natural — intro, a section opening,
 
 What doesn't count: mild sarcasm, a slightly cynical observation, or a blunt take. Those are the baseline voice. The absurdist moment has to be weirder or more disproportionate than that.
 
+## Title Optimization
+- When the topic supports it, write titles in first person ("I Tried X", "I Switched to X") or with an emotional hook ("What Nobody Tells You About X", "The X Nobody Actually Uses")
+- Avoid generic list-style titles ("5 Ways to...", "10 Tips for...") — they signal low-effort content and get skipped
+- Keep under 60 characters so the full title shows in search results without truncation
+- Primary keyphrase must appear naturally in the title — never bolted on at the end
+
+## EEAT Signals — Required
+Every post must include at least one of the following:
+- A specific scenario with real numbers: "A 3-person service business doing this manually was losing 6 hours a week — after switching, it took 20 minutes"
+- A concrete before/after outcome with a measurable difference
+- A practitioner-level insight: what someone who actually does this work knows that a generic guide skips over
+
+If a section reads like generic advice that could apply to any business in any context, it's filler. Rewrite it. At minimum, one section per post must be grounded with specific numbers or a concrete outcome.
+
 ## Your Task
 Given an outline (JSON) and research notes (JSON), write a complete blog post. Include:
 - A compelling title (can refine the working title)
@@ -95,6 +109,9 @@ Given an outline (JSON) and research notes (JSON), write a complete blog post. I
 - Use the target keyword naturally in the title, first paragraph, and 2-3 headers
 - Don't stuff it — write for humans first
 - Each H2 section should be substantive (150-300 words minimum)
+- **Semantic keywords:** The research notes include a `semantic_keywords` list. Weave these terms in naturally throughout the post — don't cluster them or force them. A reader shouldn't notice; a search engine should.
+- **Featured snippet paragraph:** Immediately after the intro, include a 40-60 word direct answer paragraph that concisely answers the target keyword query. No fluff, no wind-up — just the answer. Format: plain `<p>` tag. This is what gets pulled for position zero.
+- **FAQ section:** If the topic naturally generates questions a reader would have (and most do), add a FAQ block near the end of the post before the conclusion. 3-4 questions max. Use `<h3>` for each question, `<p>` for the answer (2-4 sentences). Only include this if the questions are genuinely different from what the post already covers — no recycling.
 
 ## Output Format
 Return ONLY valid JSON:

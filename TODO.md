@@ -22,6 +22,7 @@
 - [ ] Build 8pm approval reminder (n8n)
 - [x] Add Suggested Date + Published Date fields to Content Ideas, Pillars, Clusters tables in Airtable | completed: 2026-03-31 | discord_sent: true
 - [ ] Add Suggested/Rejected status options to Clusters table in Airtable
+- [ ] Backfill published_posts_index.json with existing published posts (currently empty — only populates on next publish)
 
 ## Completed
 - [x] Set up discord_bot.py as persistent systemd service (auto-restart on reboot) | completed: 2026-03-21 | discord_sent: true

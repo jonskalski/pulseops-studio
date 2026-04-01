@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-03-31 — Added 9 SEO behaviors to content pipeline
+
+### pipeline.py
+- Added `POSTS_INDEX_FILE`, `load_posts_index()`, `update_posts_index()` — maintains published_posts_index.json with title/url/slug/topic per post
+- Added `generate_schema_markup()` — auto-detects Article/HowTo/FAQPage schema, appends JSON-LD to post content before WP publish
+- Updated internal linking section to use local posts index (topic-aware) merged with WP API
+- Changed image alt text from post title to keyword string
+- Added keyword cannibalization check before pipeline starts — posts Discord warning if overlap found
+- `update_posts_index()` called after each successful publish
+
+### agents/01_outline.md
+- Added Title Optimization section: first-person/emotional hooks, no list titles, 60-char limit, natural keyphrase placement
+
+### agents/02_research.md
+- Added `semantic_keywords` deliverable (8-10 LSI/related terms) to research task and output JSON schema
+
+### agents/03_draft.md
+- Added Title Optimization section (same rules as outline)
+- Added EEAT Signals requirement: at least one specific scenario with real numbers, before/after outcome, or practitioner insight per post
+- Added SEO instructions for semantic keyword weaving, featured snippet paragraph (40-60 word direct answer after intro), and FAQ section (3-4 H3 Q&As near conclusion)
+
+### agents/06_approver.md
+- Added title checks to SEO Basics: 60-char limit, no generic list titles
+- Added EEAT approval criterion with pass/fail scoring
+- Added `eeat` to scores output JSON
+
 ## 2026-03-31 — Added date tracking fields to all Airtable tables
 
 ### airtable/client.py

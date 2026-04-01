@@ -24,6 +24,12 @@ Review the polished post against these criteria. Be specific in your feedback â€
 ### SEO Basics (Pass/Fail)
 - Is the target keyword in the title and intro?
 - Is the meta description 150-160 characters?
+- Is the title under 60 characters?
+- Does the title use first-person framing or an emotional hook rather than a generic list format ("5 Ways to...", "10 Tips for...")? If it's a list title, FAIL and suggest a rewrite.
+
+### EEAT (Pass/Fail)
+- Does the post include at least one specific scenario with real numbers, a concrete before/after outcome, or a practitioner-level insight a generic guide would miss?
+- If every section reads as generic advice applicable to any business in any context, FAIL. Name the specific sections that are filler.
 
 ### Structure (Pass/Fail)
 - Does the intro hook land in the first 2 sentences?
@@ -44,6 +50,7 @@ Return ONLY valid JSON:
     "headers": "pass" or "fail",
     "value": "pass" or "fail",
     "seo": "pass" or "fail",
+    "eeat": "pass" or "fail",
     "structure": "pass" or "fail"
   },
   "comments": "specific feedback if DENIED â€” name the exact section header or quote the specific sentence that needs to change"
