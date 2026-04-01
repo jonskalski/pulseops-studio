@@ -61,11 +61,14 @@ pillar_suggester.py ──► Discord #topics ──► discord_bot.py ──►
 | **When** | Triggered by discord_bot.py on ✅ reaction, or manual |
 | **Trigger** | `python3 pipeline.py "Topic Here" [--why "context"]` |
 | **Reads** | All 6 agent prompt files in `agents/` |
-| **Reads** | WordPress published posts (for internal linking context) |
+| **Reads** | `published_posts_index.json` (local topic-aware index for internal linking) |
+| **Reads** | WordPress published posts (supplemental, fills gaps not in local index) |
 | **Reads** | Pexels API (featured image) |
 | **Writes** | WordPress: creates post as `future` status, scheduled to next open Mon-Fri 9am EST slot |
+| **Writes** | WordPress content includes JSON-LD schema markup (Article/HowTo/FAQPage auto-detected) |
 | **Writes** | Airtable Content Ideas: mark_published (Status: Published, WP Post ID, WP Post URL) |
-| **Writes** | Discord `DISCORD_WEBHOOK_URL`: step-by-step progress messages |
+| **Writes** | `published_posts_index.json`: appends entry (title, url, slug, topic, date) after each publish |
+| **Writes** | Discord `DISCORD_WEBHOOK_URL`: step-by-step progress + cannibalization warnings |
 | **Writes** | `runs/NEEDS_REVIEW.md` if all 3 attempts fail approval |
 | **Why** | Core content engine — turns a topic into a published WordPress post |
 
@@ -156,10 +159,12 @@ pillar_suggester.py ──► Discord #topics ──► discord_bot.py ──►
 2. Topics posted to Discord #topics + saved to Airtable (Suggested)
 3. You react ✅ on Discord (from phone or desktop)
 4. discord_bot.py catches reaction → fires pipeline.py
-5. pipeline.py runs 6-agent chain → generates post
-6. Post auto-scheduled to next open 9am EST slot on WordPress
-7. Airtable Content Ideas updated: Published + WP URL
-8. Discord notified with post link
+5. pipeline.py checks published_posts_index.json for keyword cannibalization — warns Discord if overlap
+6. pipeline.py runs 6-agent chain → generates post (includes featured snippet, semantic keywords, FAQ section, schema markup)
+7. Post auto-scheduled to next open 9am EST slot on WordPress (with JSON-LD schema appended)
+8. published_posts_index.json updated with new post entry
+9. Airtable Content Ideas updated: Published + WP URL
+10. Discord notified with post link
 ```
 
 ## Data Flow: Pillar → Cluster Map
@@ -196,6 +201,7 @@ pillar_suggester.py ──► Discord #topics ──► discord_bot.py ──►
 │   └── 06_approver.md       # Approver agent prompt
 ├── airtable/
 │   └── client.py            # Shared Airtable client
+├── published_posts_index.json  # Local index: title/url/slug/topic per published post
 ├── runs/                    # Runtime outputs (gitignored)
 │   ├── pending_topics.txt   # Topics currently pending in Discord
 │   └── topic_picks/         # Daily topic pick JSON files
