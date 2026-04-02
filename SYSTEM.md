@@ -110,9 +110,10 @@ pillar_suggester.py ──► Discord #topics ──► discord_bot.py ──►
 | | |
 |---|---|
 | **What** | Shared Airtable client used by all scripts |
-| **Tables** | Content Ideas, Pillars, Clusters, Social Posts |
+| **Tables** | Content Ideas, Pillars, Clusters, Social Posts, Rejected Posts |
 | **Key functions** | `create_suggested`, `mark_approved`, `mark_skipped`, `mark_regenerate`, `mark_published` |
 | **Key functions** | `create_cluster`, `mark_cluster_published`, `sync_pillar_stats` |
+| **Key functions** | `log_rejected_post`, `get_force_publish_records`, `update_rejected_status` |
 | **Why** | Single source of truth for all Airtable reads/writes — no duplication across scripts |
 
 ---
@@ -125,6 +126,7 @@ pillar_suggester.py ──► Discord #topics ──► discord_bot.py ──►
 | **Pillars** | Top-level content pillars | Suggested → Planning → Active → Ready → Published / Rejected |
 | **Clusters** | Individual posts under a pillar | Suggested → Approved → Published |
 | **Social Posts** | Social variants after publish | Scheduled → Posted _(not yet built)_ |
+| **Rejected Posts** | Posts that failed all 3 approval attempts | Needs Review → Force Publish → Published (Forced) / Reviewed |
 
 ---
 
@@ -132,23 +134,26 @@ pillar_suggester.py ──► Discord #topics ──► discord_bot.py ──►
 
 | Channel | Webhook Env Var | What posts there |
 |---|---|---|
-| `#topics` | `DISCORD_TOPICS_WEBHOOK_URL` | Topic suggestions (topic_picker.py) |
-| `#general` or main | `DISCORD_WEBHOOK_URL` | Pipeline progress, pillar suggestions, pillar briefs |
+| `#daily-topics` | `DISCORD_TOPICS_WEBHOOK_URL` | Topic suggestions (topic_picker.py) |
+| `#pillar-post-suggestions` | `DISCORD_PILLAR_WEBHOOK_URL` | Pillar suggestions + cluster maps (pillar_suggester.py, pillar_planner.py) |
+| `#drafts` | `DISCORD_DRAFTS_WEBHOOK_URL` | Pipeline publish notifications, Force Publish confirmations |
+| `#general` or main | `DISCORD_WEBHOOK_URL` | Errors, alerts, fallback |
 | `#todo` | `DISCORD_TODO_WEBHOOK_URL` | Completed + pending TODO items (from /summarize) |
 
 **Bot token:** `DISCORD_BOT_TOKEN` — watches `#topics` (channel ID: `1484068137547599893`) for reactions
 
 ---
 
-## Cron Schedule (Target — Not Yet Active)
+## Cron Schedule
 
-| Job | Schedule | Notes |
+| Job | Schedule | Status |
 |---|---|---|
-| `topic_picker.py` | `0 3 * * *` | 3am EST daily |
-| `pipeline.py` (publish) | `0 7 * * 1-5` | 7am EST Mon-Fri |
-| `pillar_suggester.py` | `0 9 * * 1` | 9am EST Monday |
-| Buffer top-up | `0 7 * * 1-5` | 7am EST _(not built)_ |
-| Approval reminder | `0 20 * * 1-5` | 8pm EST _(not built)_ |
+| `topic_picker.py` | `0 7 * * *` | Active (7am UTC = 3am EST) |
+| `pillar_suggester.py` | `0 13 * * 1` | Active (1pm UTC = 9am EST Mon) |
+| `force_publish.py --poll` | `*/5 * * * *` | Active (every 5 min) |
+| `pipeline.py` (auto-publish) | `0 7 * * 1-5` | Not built |
+| Buffer top-up | `0 7 * * 1-5` | Not built |
+| Approval reminder | `0 20 * * 1-5` | Not built |
 
 ---
 
