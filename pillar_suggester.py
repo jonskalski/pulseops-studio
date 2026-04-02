@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent / ".env", override=True)
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
+DISCORD_WEBHOOK_URL = os.getenv("DISCORD_PILLAR_WEBHOOK_URL") or os.getenv("DISCORD_WEBHOOK_URL")
 SONNET = "claude-sonnet-4-6"
 
 

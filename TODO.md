@@ -6,8 +6,8 @@
 - [ ] Set up AdSense account (need ~6-8 weeks of consistent publishing first)
 - [x] Run topic_picker.py end-to-end to test all 5 topics posting + pending_topics.txt dedup | completed: 2026-03-28 | discord_sent: true
 - [x] Test full pipeline with --why flag passed from Discord bot | completed: 2026-03-21 | discord_sent: true
-- [ ] Create Discord #drafts channel + get webhook URL
-- [ ] Create Discord #pillar-topics channel + get webhook URL
+- [x] Create Discord #drafts channel + get webhook URL | completed: 2026-04-02 | discord_sent: true
+- [x] Create Discord #pillar-topics channel + get webhook URL | completed: 2026-04-02 | discord_sent: true
 - [ ] Provide n8n URL + API key for workflow setup
 - [ ] Set up rclone + Google Drive sync + cron (low priority — disaster recovery only)
 - [ ] Install gh CLI + authenticate with GitHub PAT
@@ -15,7 +15,7 @@
 - [ ] Install jq (JSON debugging in terminal)
 - [ ] Install tmux (persistent SSH sessions)
 - [ ] Install ufw + fail2ban (security before opening ports)
-- [ ] Handle rejected posts — decide flow: Discord notify with ✅ retry / ❌ discard, or auto-retry with feedback injected, or manual queue
+- [x] Handle rejected posts — decide flow: Discord notify with ✅ retry / ❌ discard, or auto-retry with feedback injected, or manual queue | completed: 2026-04-02 | discord_sent: true
 - [ ] Schedule blog pipeline cron (7am EST)
 - [ ] Build buffer system (10 evergreen safety posts, auto-refill logic)
 - [ ] Build draft review flow (WP draft → Discord notify → ✅/❌/🔁 → publish or fallback)

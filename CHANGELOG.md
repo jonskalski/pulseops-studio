@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-04-02 — Discord channel routing, rejected post workflow, Polish feedback fix
+
+### pipeline.py
+- `DISCORD_WEBHOOK_URL` now prefers `DISCORD_DRAFTS_WEBHOOK_URL` — publish notifications go to #drafts
+- `polish_and_approve()` now accepts `approver_feedback` param — passes rejection comments to Polish agent on attempts 2 and 3
+- On 3-attempt failure: logs to Airtable Rejected Posts table via `log_rejected_post()`, posts Discord prompt to flip "Force Publish"
+
+### pillar_suggester.py / pillar_planner.py
+- `DISCORD_WEBHOOK_URL` now prefers `DISCORD_PILLAR_WEBHOOK_URL` — pillar suggestions/plans go to #pillar-post-suggestions
+
+### airtable/client.py
+- Added `TABLE_REJECTED` — new Rejected Posts table
+- Added `log_rejected_post()`, `get_force_publish_records()`, `update_rejected_status()`
+
+### force_publish.py (new)
+- Polls Airtable for "Force Publish" status records, publishes last polished run to WordPress, updates status to "Published (Forced)", notifies #drafts
+
+### .env
+- Added `DISCORD_PILLAR_WEBHOOK_URL`, `DISCORD_DRAFTS_WEBHOOK_URL`, `AIRTABLE_REJECTED_POSTS_TABLE_ID`
+
+### crontab
+- Added `*/5 * * * *` poller for `force_publish.py --poll`
+
 ## 2026-03-31 — Added 9 SEO behaviors to content pipeline
 
 ### pipeline.py

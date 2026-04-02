@@ -17,6 +17,7 @@ TABLE_CONTENT  = os.getenv("AIRTABLE_CONTENT_IDEAS_TABLE_ID")
 TABLE_PILLARS  = os.getenv("AIRTABLE_PILLARS_TABLE_ID")
 TABLE_CLUSTERS = os.getenv("AIRTABLE_CLUSTERS_TABLE_ID")
 TABLE_SOCIAL   = os.getenv("AIRTABLE_SOCIAL_POSTS_TABLE_ID")
+TABLE_REJECTED = os.getenv("AIRTABLE_REJECTED_POSTS_TABLE_ID")
 
 BASE_URL = f"https://api.airtable.com/v0/{BASE_ID}"
 HEADERS  = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
@@ -171,3 +172,27 @@ def backfill_published(posts):
         })
         created += 1
     return created
+
+
+def log_rejected_post(topic, run_id, rejection_reason, score_breakdown, post_copy):
+    """Log a post that failed all 3 approval attempts to the Rejected Posts table."""
+    from datetime import date
+    return _create(TABLE_REJECTED, {
+        "Topic": topic,
+        "Run ID": run_id,
+        "Date": date.today().isoformat(),
+        "Rejection Reason": rejection_reason,
+        "Score Breakdown": score_breakdown,
+        "Post Copy": post_copy[:100000],  # Airtable field limit
+        "Status": "Needs Review",
+    })
+
+
+def get_force_publish_records():
+    """Return all Rejected Posts records with Status = Force Publish."""
+    return _get(TABLE_REJECTED, {"filterByFormula": "{Status} = 'Force Publish'"})
+
+
+def update_rejected_status(record_id, status):
+    """Update the Status field on a Rejected Posts record."""
+    return _update(TABLE_REJECTED, record_id, {"Status": status})

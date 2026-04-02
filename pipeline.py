@@ -28,7 +28,7 @@ WP_URL = os.environ.get("WP_URL", "https://pulseops.us")
 POSTS_INDEX_FILE = BASE_DIR / "published_posts_index.json"
 WP_USER = os.environ.get("WP_USER")
 WP_APP_PASSWORD = os.environ.get("WP_APP_PASSWORD")
-DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL")
+DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_DRAFTS_WEBHOOK_URL") or os.environ.get("DISCORD_WEBHOOK_URL")
 PEXELS_API_KEY = os.environ.get("PEXELS_API_KEY")
 
 # ── Publish Schedule ────────────────────────────────────────────────────────
@@ -435,9 +435,12 @@ def run_pipeline(topic, why=None):
     polished = None
     last_comments = ""
 
-    def polish_and_approve(post_input, attempt_label, run_dir):
+    def polish_and_approve(post_input, attempt_label, run_dir, approver_feedback=None):
         discord(f"⏳ Polish — {attempt_label}...")
-        p = run_agent("05_polish", f"Post:\n{json.dumps(post_input, indent=2)}", run_dir)
+        polish_input = f"Post:\n{json.dumps(post_input, indent=2)}"
+        if approver_feedback:
+            polish_input += f"\n\nApprover feedback from previous attempt (fix these issues):\n{approver_feedback}"
+        p = run_agent("05_polish", polish_input, run_dir)
         polish_notes = p.get('polish_notes', []) if isinstance(p, dict) else []
         notes_preview = "\n".join(f"  - {n}" for n in polish_notes) if polish_notes else "  (no notes)"
         discord(f"✅ Polish complete — {attempt_label}\n{notes_preview}")
@@ -463,7 +466,7 @@ def run_pipeline(topic, why=None):
     # Attempt 2: Polish again → Approve
     if not approved:
         discord(f"🔄 Sending back to Polish (attempt 2/3)...")
-        polished, approval = polish_and_approve(polished, "attempt 2/3", run_dir)
+        polished, approval = polish_and_approve(polished, "attempt 2/3", run_dir, approver_feedback=last_comments)
         if isinstance(approval, dict) and approval.get("decision") == "APPROVED":
             scores = approval.get("scores", {})
             scores_str = "  " + "  ".join(f"{k}: {v}" for k, v in scores.items())
@@ -491,7 +494,7 @@ def run_pipeline(topic, why=None):
             draft_retry_input += f"\n\nTopic context: {why}"
         redraft = run_agent("03_draft", draft_retry_input, run_dir)
         discord(f"✅ Draft rerun complete")
-        polished, approval = polish_and_approve(redraft, "attempt 3/3", run_dir)
+        polished, approval = polish_and_approve(redraft, "attempt 3/3", run_dir, approver_feedback=last_comments)
         if isinstance(approval, dict) and approval.get("decision") == "APPROVED":
             scores = approval.get("scores", {})
             scores_str = "  " + "  ".join(f"{k}: {v}" for k, v in scores.items())
@@ -508,6 +511,21 @@ def run_pipeline(topic, why=None):
 
     if not approved:
         print(f"\n⚠️  Post needs manual review. Check: {run_dir}")
+        try:
+            from airtable.client import log_rejected_post
+            post_copy = json.dumps(polished, indent=2) if isinstance(polished, dict) else str(polished)
+            scores = approval.get("scores", {}) if isinstance(approval, dict) else {}
+            score_str = "\n".join(f"  {k}: {v}" for k, v in scores.items())
+            log_rejected_post(
+                topic=topic,
+                run_id=run_dir.name,
+                rejection_reason=last_comments,
+                score_breakdown=score_str,
+                post_copy=post_copy,
+            )
+            discord(f"📋 Logged to Airtable Rejected Posts — flip to **Force Publish** to override.")
+        except Exception as e:
+            print(f"  Warning: could not log to Airtable: {e}")
         return
 
     # ── Publish ──────────────────────────────────────────────────────────
