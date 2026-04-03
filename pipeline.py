@@ -81,38 +81,11 @@ def update_posts_index(title, url, slug, topic):
 # ── Schema Markup ────────────────────────────────────────────────────────────
 
 def generate_schema_markup(post_data, pub_date_str=""):
-    """Generate JSON-LD schema. Defaults to Article, upgrades to HowTo or FAQPage."""
+    """Generate JSON-LD schema. Defaults to Article, upgrades to HowTo."""
     content = post_data.get("content", "")
     title = post_data.get("title", "")
     title_lower = title.lower()
     date_str = pub_date_str[:10] if pub_date_str else datetime.now().strftime("%Y-%m-%d")
-
-    # FAQPage: H2 headers that end in a question mark
-    has_faq = bool(re.search(r'<h2[^>]*>[^<]*\?[^<]*</h2>', content, re.IGNORECASE))
-    if has_faq:
-        qa_pairs = []
-        for m in re.finditer(
-            r'<h2[^>]*>([^<]*\?[^<]*)</h2>\s*<p>(.*?)</p>',
-            content, re.IGNORECASE | re.DOTALL
-        ):
-            question = re.sub(r'<[^>]+>', '', m.group(1)).strip()
-            answer = re.sub(r'<[^>]+>', '', m.group(2)).strip()[:300]
-            if question and answer:
-                qa_pairs.append({"question": question, "answer": answer})
-        if qa_pairs:
-            schema = {
-                "@context": "https://schema.org",
-                "@type": "FAQPage",
-                "mainEntity": [
-                    {
-                        "@type": "Question",
-                        "name": q["question"],
-                        "acceptedAnswer": {"@type": "Answer", "text": q["answer"]},
-                    }
-                    for q in qa_pairs
-                ],
-            }
-            return f'\n<script type="application/ld+json">\n{json.dumps(schema, indent=2)}\n</script>'
 
     # HowTo: title signals step-by-step instructional content
     howto_signals = ["how to ", "step-by-step", "steps to ", "guide to "]

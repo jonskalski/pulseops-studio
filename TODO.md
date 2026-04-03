@@ -10,11 +10,14 @@
 - [x] Create Discord #pillar-topics channel + get webhook URL | completed: 2026-04-02 | discord_sent: true
 - [ ] Provide n8n URL + API key for workflow setup
 - [ ] Set up rclone + Google Drive sync + cron (low priority — disaster recovery only)
+- [ ] Set up Google Search Console stats in morning briefing
+- [ ] Wire social posting (LinkedIn first, then Facebook/Instagram, BlueSky)
+- [ ] Test rejected post + force publish workflow end-to-end
 - [ ] Install gh CLI + authenticate with GitHub PAT
 - [ ] Install bat (syntax-highlighted terminal file viewer)
 - [ ] Install jq (JSON debugging in terminal)
 - [ ] Install tmux (persistent SSH sessions)
-- [ ] Install ufw + fail2ban (security before opening ports)
+- [x] Install ufw + fail2ban (security before opening ports) | completed: 2026-04-03 | discord_sent: true
 - [x] Handle rejected posts — decide flow: Discord notify with ✅ retry / ❌ discard, or auto-retry with feedback injected, or manual queue | completed: 2026-04-02 | discord_sent: true
 - [ ] Schedule blog pipeline cron (7am EST)
 - [ ] Build buffer system (10 evergreen safety posts, auto-refill logic)

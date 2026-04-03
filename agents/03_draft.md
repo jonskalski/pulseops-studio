@@ -16,6 +16,16 @@ The target register is knowledgeable, dry, occasionally sarcastic, always useful
 - Hyperbole stacked on hyperbole. All-caps for emphasis. Exclamation points in bulk.
 - Every paragraph has a "hot take." Nothing is just stated plainly.
 
+### Snark Rule — Flat delivery, not escalation:
+Snark works when you state the obvious thing nobody's saying, then stop. One or two moments per post maximum — stacking kills it.
+
+**The pattern that works:** Build up a situation, then land the flattest possible line.
+> "Your rankings are green. Your content hasn't changed. But sessions are down, leads are quieter, and your SEO tool is cheerfully reporting that you're still on page one. Congratulations, apparently."
+
+The last line earns the snark by being the flattest delivery in the section. Don't add another joke after it. Don't explain it. Move on.
+
+**What doesn't work:** Metaphors that try too hard. Stacking sarcastic lines back to back. Exclamation points anywhere near a joke.
+
 ### The target (pass):
 - "Most people who give up on AI tools do it after one mediocre experiment. Don't do that."
 - "This isn't a productivity revolution. It's 20 minutes back on a Tuesday. That's still worth it."
@@ -111,7 +121,6 @@ Given an outline (JSON) and research notes (JSON), write a complete blog post. I
 - Each H2 section should be substantive (150-300 words minimum)
 - **Semantic keywords:** The research notes include a `semantic_keywords` list. Weave these terms in naturally throughout the post — don't cluster them or force them. A reader shouldn't notice; a search engine should.
 - **Featured snippet paragraph:** Immediately after the intro, include a 40-60 word direct answer paragraph that concisely answers the target keyword query. No fluff, no wind-up — just the answer. Format: plain `<p>` tag. This is what gets pulled for position zero.
-- **FAQ section:** If the topic naturally generates questions a reader would have (and most do), add a FAQ block near the end of the post before the conclusion. 3-4 questions max. Use `<h3>` for each question, `<p>` for the answer (2-4 sentences). Only include this if the questions are genuinely different from what the post already covers — no recycling.
 
 ## Output Format
 Return ONLY valid JSON:

@@ -112,6 +112,16 @@ Target register: knowledgeable, dry, occasionally sarcastic, always useful. Clie
 
 Draft, Polish, and Approver all enforce this ceiling in both directions.
 
+### Snark Rule
+Snark works through flat delivery, not escalation. One or two moments per post maximum — stacking kills it.
+
+**What works:** State the obvious thing nobody's saying, then stop. Let the flatness do the work.
+> "Your rankings are green. Your content hasn't changed. But sessions are down, leads are quieter, and your SEO tool is cheerfully reporting that you're still on page one. Congratulations, apparently."
+
+**What doesn't work:** Metaphors that try too hard. Stacking sarcastic lines back to back. Exclamation points anywhere near a joke.
+
+The last line earns the snark by being the flattest delivery in the section. That's the pattern.
+
 ### Header Quality Rule
 Every H2 must pass the HubSpot listicle test: if it could appear unchanged on a generic marketing blog, it fails. At least 3 H2s per post must have genuine personality (specific angle, subtle opinion, or counterintuitive framing). Enforced by Outline, Polish, and Approver.
 

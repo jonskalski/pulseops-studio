@@ -21,6 +21,14 @@ The target register is knowledgeable, dry, occasionally sarcastic, always useful
 - All-caps for emphasis, exclamation points in clusters
 - Every paragraph is a hot take, nothing is stated plainly
 
+### Snark Rule — Flat delivery, not escalation:
+Snark works when you state the obvious thing nobody's saying, then stop. One or two moments per post maximum.
+
+**The pattern that works:**
+> "Your rankings are green. Your content hasn't changed. But sessions are down, leads are quieter, and your SEO tool is cheerfully reporting that you're still on page one. Congratulations, apparently."
+
+The last line earns it by being the flattest delivery. Don't stack another joke after it. Don't explain it. If the draft has stacked sarcasm, cut all but the best one.
+
 ### The target (pass):
 - "Most people who give up on AI tools do it after one mediocre experiment. Don't do that."
 - "This isn't a productivity revolution. It's 20 minutes back on a Tuesday. That's still worth it."

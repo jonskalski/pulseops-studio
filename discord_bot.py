@@ -38,14 +38,21 @@ async def on_ready():
     print(f"PulseOps Bot online as {client.user}")
 
 @client.event
-async def on_reaction_add(reaction, user):
-    if user.bot:
+async def on_raw_reaction_add(payload):
+    if payload.user_id == client.user.id:
         return
-    if reaction.message.channel.id != TOPICS_CHANNEL_ID:
+    if payload.channel_id != TOPICS_CHANNEL_ID:
         return
 
-    msg = reaction.message.content
-    emoji = str(reaction.emoji)
+    channel = client.get_channel(payload.channel_id)
+    message = await channel.fetch_message(payload.message_id)
+    user = await client.fetch_user(payload.user_id)
+
+    if user.bot:
+        return
+
+    msg = message.content
+    emoji = str(payload.emoji)
 
     if emoji not in ("✅", "❌", "🔁"):
         return
@@ -60,7 +67,7 @@ async def on_reaction_add(reaction, user):
             name_match = re.search(r'\*\*(.+?)\*\*', msg)
 
     if not name_match:
-        await reaction.message.channel.send("Couldn't parse the topic from that message.")
+        await message.channel.send("Couldn't parse the topic from that message.")
         return
 
     topic = name_match.group(1).strip()
@@ -97,7 +104,7 @@ async def on_reaction_add(reaction, user):
         confirms = {"approve": f"Got it. Building cluster map for: **{topic}**", "skip": "Skipped.", "regenerate": "Skipped."}
     else:
         confirms = {"approve": f"Got it. Running pipeline for: **{topic}**", "skip": "Skipped.", "regenerate": f"Requeued: **{topic}**"}
-    await reaction.message.channel.send(confirms[action])
+    await message.channel.send(confirms[action])
 
     if action == "approve":
         import subprocess

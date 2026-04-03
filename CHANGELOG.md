@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-04-03 — Voice/snark rule, FAQ removed, Discord bot raw reaction fix
+
+### CLAUDE.md
+- Added Snark Rule section with concrete before/after example ("Congratulations, apparently.")
+
+### agents/03_draft.md
+- Added Snark Rule with pattern example above the voice target examples
+- Removed FAQ section instruction entirely
+
+### agents/05_polish.md
+- Added Snark Rule with pattern example
+
+### pipeline.py
+- Removed FAQPage schema detection — no longer generates FAQPage JSON-LD
+
+### discord_bot.py
+- Switched from `on_reaction_add` to `on_raw_reaction_add` — reactions on cached messages now work for all messages regardless of age
+
 ## 2026-04-02 — Discord channel routing, rejected post workflow, Polish feedback fix
 
 ### pipeline.py
