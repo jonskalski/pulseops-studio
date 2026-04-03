@@ -111,7 +111,7 @@ async def on_raw_reaction_add(payload):
         if is_pillar:
             cmd = ["python3", "/root/pulseops-studio/pillar_planner.py", topic]
         else:
-            cmd = ["python3", "/root/pulseops-studio/pipeline.py", topic]
+            cmd = ["python3", "/root/pulseops-studio/pipeline.py", topic, "--publish-days", "1,3"]
             if why:
                 cmd += ["--why", why]
         subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -180,7 +180,7 @@ async def on_message(message):
         why = None
 
     await message.channel.send(f"Got it. Running pipeline for: **{topic}**")
-    cmd = ["python3", "/root/pulseops-studio/pipeline.py", topic]
+    cmd = ["python3", "/root/pulseops-studio/pipeline.py", topic, "--publish-days", "1,3"]
     if why:
         cmd += ["--why", why]
     try:

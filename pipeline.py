@@ -121,8 +121,14 @@ def generate_schema_markup(post_data, pub_date_str=""):
 
 # ── Scheduling ──────────────────────────────────────────────────────────────
 
-def next_publish_slot():
-    """Find next available Mon-Fri 9am EST slot not already taken in WP."""
+def next_publish_slot(allowed_days=None):
+    """Find next available 9am EST slot on allowed_days not already taken in WP.
+
+    allowed_days: list of weekday ints (0=Mon ... 6=Sun). Defaults to PUBLISH_DAYS.
+    """
+    if allowed_days is None:
+        allowed_days = PUBLISH_DAYS
+
     est = ZoneInfo("America/New_York")
     now = datetime.now(est)
 
@@ -150,7 +156,7 @@ def next_publish_slot():
 
     for _ in range(90):
         date_str = candidate.strftime("%Y-%m-%d")
-        if candidate.weekday() in PUBLISH_DAYS and date_str not in taken and date_str not in SKIP_DATES:
+        if candidate.weekday() in allowed_days and date_str not in taken and date_str not in SKIP_DATES:
             return candidate.strftime("%Y-%m-%dT%H:%M:%S")
         candidate += timedelta(days=1)
 
@@ -259,7 +265,7 @@ def upload_image_to_wordpress(image_url, title, slug):
         print(f"  Image upload failed: {e}")
         return None, None
 
-def publish_to_wordpress(post_data, keyword=None):
+def publish_to_wordpress(post_data, keyword=None, allowed_days=None):
     # Fetch and upload featured image
     featured_media_id = None
     uploaded_image_url = None
@@ -284,7 +290,7 @@ def publish_to_wordpress(post_data, keyword=None):
         content = content[:insert_at] + "\n" + img_html + "\n" + content[insert_at:]
 
     # Append JSON-LD schema markup
-    pub_date = next_publish_slot()
+    pub_date = next_publish_slot(allowed_days=allowed_days)
     content = content + generate_schema_markup(post_data, pub_date)
 
     endpoint = f"{WP_URL}/wp-json/wp/v2/posts"
@@ -311,7 +317,7 @@ def publish_to_wordpress(post_data, keyword=None):
 
 # ── Main Pipeline ────────────────────────────────────────────────────────────
 
-def run_pipeline(topic, why=None):
+def run_pipeline(topic, why=None, allowed_days=None):
     if not ANTHROPIC_API_KEY:
         print("ERROR: ANTHROPIC_API_KEY not set")
         sys.exit(1)
@@ -505,7 +511,7 @@ def run_pipeline(topic, why=None):
     discord(f"📤 Scheduling to WordPress...")
     try:
         keyword = outline.get("target_keyword", "") if isinstance(outline, dict) else ""
-        result = publish_to_wordpress(polished, keyword=keyword)
+        result = publish_to_wordpress(polished, keyword=keyword, allowed_days=allowed_days)
         post_url = result.get("link", "unknown")
         post_id  = result.get("id", "")
         pub_date = result.get("date", "")
@@ -534,6 +540,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("topic", nargs="+", help="Topic to write about")
     parser.add_argument("--why", default=None, help="Context: why this topic is timely and the SMB angle")
+    parser.add_argument("--publish-days", default=None, help="Comma-separated weekday ints to restrict scheduling (e.g. '1,3' for Tue/Thu)")
     args = parser.parse_args()
     topic = " ".join(args.topic)
-    run_pipeline(topic, why=args.why)
+    allowed_days = [int(d) for d in args.publish_days.split(",")] if args.publish_days else None
+    run_pipeline(topic, why=args.why, allowed_days=allowed_days)

@@ -13,6 +13,7 @@
 - [ ] Set up Google Search Console stats in morning briefing
 - [ ] Wire social posting (LinkedIn first, then Facebook/Instagram, BlueSky)
 - [ ] Test rejected post + force publish workflow end-to-end
+- [ ] Rebuild cluster_writer.py for full pillar batch mode (write all clusters at once, schedule in sequence)
 - [ ] Install gh CLI + authenticate with GitHub PAT
 - [ ] Install bat (syntax-highlighted terminal file viewer)
 - [ ] Install jq (JSON debugging in terminal)
