@@ -64,7 +64,7 @@ pillar_suggester.py ──► Discord #topics ──► discord_bot.py ──►
 | **Reads** | `published_posts_index.json` (local topic-aware index for internal linking) |
 | **Reads** | WordPress published posts (supplemental, fills gaps not in local index) |
 | **Reads** | Pexels API (featured image) |
-| **Writes** | WordPress: creates post as `future` status, scheduled to next open Mon-Fri 9am EST slot |
+| **Writes** | WordPress: creates post as `future` status, scheduled to next open 9am EST slot on allowed days |
 | **Writes** | WordPress content includes JSON-LD schema markup (Article/HowTo/FAQPage auto-detected) |
 | **Writes** | Airtable Content Ideas: mark_published (Status: Published, WP Post ID, WP Post URL) |
 | **Writes** | `published_posts_index.json`: appends entry (title, url, slug, topic, date) after each publish |
@@ -148,10 +148,10 @@ pillar_suggester.py ──► Discord #topics ──► discord_bot.py ──►
 
 | Job | Schedule | Status |
 |---|---|---|
-| `topic_picker.py` | `0 7 * * *` | Active (7am UTC = 3am EST) |
+| `topic_picker.py` | `0 7 * * *` | Active (7am UTC = 3am EST) — posts to Discord for Tue/Thu approval |
 | `pillar_suggester.py` | `0 13 * * 1` | Active (1pm UTC = 9am EST Mon) |
 | `force_publish.py --poll` | `*/5 * * * *` | Active (every 5 min) |
-| `pipeline.py` (auto-publish) | `0 7 * * 1-5` | Not built |
+| `cluster_writer.py` | `0 7 * * 1,3,6` | Active (Sat/Mon/Wed 7am UTC — publishes Mon/Wed/Fri) |
 | Buffer top-up | `0 7 * * 1-5` | Not built |
 | Approval reminder | `0 20 * * 1-5` | Not built |
 
@@ -182,8 +182,9 @@ pillar_suggester.py ──► Discord #topics ──► discord_bot.py ──►
 5. pillar_planner.py generates 20+ cluster titles grouped by angle
 6. Pillar record created in Airtable (Planning) + 20 Cluster records (Suggested)
 7. Pillar brief posted to Discord
-8. You approve individual clusters in Airtable
-9. pipeline.py picks up Approved clusters on cadence (same flow as topics above)
+8. cluster_writer.py runs Sat/Mon/Wed at 7am UTC — pulls next Suggested cluster, fires pipeline with --publish-days 0,2,4 (Mon/Wed/Fri)
+9. Post lands as WP draft, Discord notifies #drafts for review
+10. NOTE: cluster_writer.py needs rebuild for full batch mode (write all pillar clusters at once)
 ```
 
 ---

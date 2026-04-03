@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-04-03 — Cluster cadence, publish day routing, morning briefing fix, Pexels key
+
+### morning_briefing.py (sandbox)
+- Fixed jolt/weird fact always showing fallback — Claude API returns JSON in markdown code blocks, broke json.loads(). Fixed with regex extraction.
+
+### pipeline.py
+- next_publish_slot() now accepts allowed_days param to restrict scheduling to specific weekdays
+- publish_to_wordpress() and run_pipeline() thread allowed_days through
+- Added --publish-days CLI arg (e.g. "1,3" for Tue/Thu)
+
+### discord_bot.py
+- Topic approvals and #write-this posts now pass --publish-days 1,3 (Tue/Thu only for trending topics)
+
+### cluster_writer.py (new)
+- Created cluster_writer.py — pulls next Suggested cluster from Airtable, fires pipeline with Mon/Wed/Fri scheduling
+- NOTE: needs rebuild for full batch mode next session
+
+### .env
+- Added PEXELS_API_KEY so featured images work when pipeline runs via Discord bot
+
+### crontab
+- Added cluster_writer.py cron: Sat/Mon/Wed at 7am UTC (0 7 * * 1,3,6)
+
 ## 2026-04-03 — Voice/snark rule, FAQ removed, Discord bot raw reaction fix
 
 ### CLAUDE.md
