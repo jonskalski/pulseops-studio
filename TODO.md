@@ -1,6 +1,8 @@
 # TODO
 
 ## Pending
+- [ ] Add Uptime Kuma pipeline monitor — create Push monitor (1440min interval) in Uptime Kuma, wire push URL into pipeline.py end-of-run
+- [ ] Add Uptime Kuma bot monitor to SYSTEM.md
 - [ ] Install glow for terminal markdown rendering
 - [ ] Set up filebrowser for web-based file browsing (accessible from any device)
 - [ ] Set up AdSense account (need ~6-8 weeks of consistent publishing first)

@@ -40,7 +40,8 @@ pillar_suggester.py ──► Discord #topics ──► discord_bot.py ──►
 | | |
 |---|---|
 | **What** | Persistent bot: watches reactions in #topics + messages in #write-this |
-| **When** | Always running as systemd service (pulseops-bot.service) |
+| **When** | Always running as background process (logged to /var/log/pulseops-bot.log) |
+| **Heartbeat** | Pings Uptime Kuma push monitor every 60s — monitor at status.srv1491199.hstgr.cloud |
 | **Trigger 1** | ✅ / ❌ / 🔁 reactions in `#topics` channel |
 | **Trigger 2** | Any message in `#write-this` channel (channel ID: 1484742781514682368) |
 | **Reads** | Discord message content (parses topic/pillar name + why from message format) |

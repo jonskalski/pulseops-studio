@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-04-09 — Uptime Kuma heartbeat added to Discord bot
+
+### discord_bot.py
+- Added `asyncio` import and `heartbeat()` async task that pings Uptime Kuma push URL every 60 seconds
+- Heartbeat starts on `on_ready` via `client.loop.create_task(heartbeat())`
+- Added `UPTIME_KUMA_PUSH_URL` constant for the push monitor endpoint
+- Bot restarted to pick up changes
+
+### TODO.md
+- Added: wire Uptime Kuma pipeline monitor (Push, 1440min interval) into pipeline.py end-of-run
+
 ## 2026-04-03 — Cluster cadence, publish day routing, morning briefing fix, Pexels key
 
 ### morning_briefing.py (sandbox)

@@ -10,6 +10,7 @@ import re
 import json
 import requests
 import discord
+import asyncio
 import sys
 from bs4 import BeautifulSoup
 sys.path.insert(0, "/root/pulseops-studio")
@@ -26,6 +27,7 @@ BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
 TOPICS_CHANNEL_ID = 1484068137547599893
 WRITE_THIS_CHANNEL_ID = 1484742781514682368
 N8N_WEBHOOK_URL = "https://n8n.srv1491199.hstgr.cloud/webhook/pulseops-reaction"
+UPTIME_KUMA_PUSH_URL = "https://status.srv1491199.hstgr.cloud/api/push/wqBuKbSkWQ?status=up&msg=OK&ping="
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -33,9 +35,19 @@ intents.reactions = True
 
 client = discord.Client(intents=intents)
 
+async def heartbeat():
+    await client.wait_until_ready()
+    while not client.is_closed():
+        try:
+            requests.get(UPTIME_KUMA_PUSH_URL, timeout=5)
+        except Exception as e:
+            print(f"[heartbeat error] {e}", flush=True)
+        await asyncio.sleep(60)
+
 @client.event
 async def on_ready():
     print(f"PulseOps Bot online as {client.user}")
+    client.loop.create_task(heartbeat())
 
 @client.event
 async def on_raw_reaction_add(payload):
