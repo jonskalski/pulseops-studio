@@ -56,6 +56,52 @@ AGENT_MODELS = {
 
 # ── Posts Index ─────────────────────────────────────────────────────────────
 
+def get_pillar_voice_context(pillar_name, runs_dir=None):
+    """
+    Find up to 3 published sibling posts in the same pillar and extract their
+    intro paragraph + title as a voice/terminology reference for the Draft agent.
+    Returns a formatted string, or empty string if nothing useful found.
+    """
+    if runs_dir is None:
+        runs_dir = RUNS_DIR
+    try:
+        from airtable.client import get_published_clusters_for_pillar
+        siblings = get_published_clusters_for_pillar(pillar_name)
+    except Exception:
+        return ""
+
+    samples = []
+    for rec in siblings[:3]:
+        fields = rec.get("fields", {})
+        run_id = fields.get("Run ID", "")
+        title = fields.get("Title", "")
+        if not run_id:
+            continue
+        polish_file = runs_dir / run_id / "05_polish.json"
+        if not polish_file.exists():
+            continue
+        try:
+            post = json.loads(polish_file.read_text())
+            content = post.get("content", "")
+            # Strip HTML tags and grab first ~300 chars (intro paragraph)
+            import re as _re
+            plain = _re.sub(r'<[^>]+>', '', content).strip()
+            intro = plain[:300].rsplit(' ', 1)[0] + '…' if len(plain) > 300 else plain
+            if intro:
+                samples.append(f'- **{title}**: "{intro}"')
+        except Exception:
+            continue
+
+    if not samples:
+        return ""
+
+    return (
+        f"\n\nVoice consistency — existing published posts in the '{pillar_name}' pillar "
+        f"(match their tone, terminology, and sentence rhythm):\n"
+        + "\n".join(samples)
+    )
+
+
 def load_posts_index():
     """Load local published posts index (title, url, slug, topic)."""
     if POSTS_INDEX_FILE.exists():
@@ -317,7 +363,7 @@ def publish_to_wordpress(post_data, keyword=None, allowed_days=None):
 
 # ── Main Pipeline ────────────────────────────────────────────────────────────
 
-def run_pipeline(topic, why=None, allowed_days=None):
+def run_pipeline(topic, why=None, allowed_days=None, pillar=None):
     if not ANTHROPIC_API_KEY:
         print("ERROR: ANTHROPIC_API_KEY not set")
         sys.exit(1)
@@ -391,7 +437,8 @@ def run_pipeline(topic, why=None, allowed_days=None):
     discord(f"⏳ Step 3/6 — Draft Agent running...")
     linking_note = f"\n\nExisting posts (use sparingly — 1-2 max, only mid-sentence where naturally relevant, never at the end of a section as a habit):\n{posts_context}" if posts_context else ""
     why_note = f"\n\nTopic context: {why}" if why else ""
-    draft_input = f"Outline:\n{json.dumps(outline, indent=2)}\n\nResearch:\n{json.dumps(research, indent=2)}{linking_note}{why_note}"
+    pillar_note = get_pillar_voice_context(pillar) if pillar else ""
+    draft_input = f"Outline:\n{json.dumps(outline, indent=2)}\n\nResearch:\n{json.dumps(research, indent=2)}{linking_note}{why_note}{pillar_note}"
     draft = run_agent("03_draft", draft_input, run_dir)
     draft_content = draft.get('content', '') if isinstance(draft, dict) else ''
     word_count = len(draft_content.split())
@@ -527,8 +574,10 @@ def run_pipeline(topic, why=None, allowed_days=None):
         )
         # ── Airtable update ──────────────────────────────────────────────
         try:
-            from airtable.client import mark_published
+            from airtable.client import mark_published, mark_cluster_published
             mark_published(topic, post_id, post_url)
+            if pillar:
+                mark_cluster_published(polished.get("title", topic), post_id, post_url, run_id=run_dir.name)
         except Exception as ae:
             print(f"  Airtable update failed: {ae}")
     except Exception as e:
@@ -541,7 +590,8 @@ if __name__ == "__main__":
     parser.add_argument("topic", nargs="+", help="Topic to write about")
     parser.add_argument("--why", default=None, help="Context: why this topic is timely and the SMB angle")
     parser.add_argument("--publish-days", default=None, help="Comma-separated weekday ints to restrict scheduling (e.g. '1,3' for Tue/Thu)")
+    parser.add_argument("--pillar", default=None, help="Parent pillar name — enables voice consistency context from sibling posts")
     args = parser.parse_args()
     topic = " ".join(args.topic)
     allowed_days = [int(d) for d in args.publish_days.split(",")] if args.publish_days else None
-    run_pipeline(topic, why=args.why, allowed_days=allowed_days)
+    run_pipeline(topic, why=args.why, allowed_days=allowed_days, pillar=args.pillar)

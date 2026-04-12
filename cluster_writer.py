@@ -60,7 +60,8 @@ def main():
         "python3", "/root/pulseops-studio/pipeline.py",
         title,
         "--why", why,
-        "--publish-days", "0,2,4"  # Mon/Wed/Fri only
+        "--publish-days", "0,2,4",  # Mon/Wed/Fri only
+        "--pillar", pillar,
     ]
 
     try:

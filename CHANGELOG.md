@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-04-12 — Pillar voice consistency for cluster posts
+
+### pipeline.py
+- Added `get_pillar_voice_context(pillar_name)` — queries Airtable for published sibling clusters, reads their `05_polish.json`, extracts intro paragraph (~300 chars) as voice/terminology reference
+- Added `--pillar` CLI argument; when set, voice context is injected into Draft agent input
+- `mark_cluster_published()` now called at publish time when `--pillar` is set, writing run_id to Clusters table
+
+### airtable/client.py
+- Added `run_id` param to `mark_cluster_published()` — writes Run ID field to Clusters record on publish
+- Added `get_published_clusters_for_pillar(pillar_name)` — returns published cluster records for a pillar, sorted newest first
+
+### cluster_writer.py
+- Now passes `--pillar pillar_name` to pipeline.py so every cluster post gets sibling voice context
+
 ## 2026-04-12 — Rejected post backfill + Rewrite trigger
 
 ### backfill_rejected.py (new)

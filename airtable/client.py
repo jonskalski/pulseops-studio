@@ -135,21 +135,33 @@ def create_cluster(title, pillar_name, angle=None, priority="Normal"):
     })
 
 
-def mark_cluster_published(title, wp_post_id, wp_post_url):
+def mark_cluster_published(title, wp_post_id, wp_post_url, run_id=None):
     """Flip cluster status to Published after WP post goes live."""
     from datetime import date
     records = _get(TABLE_CLUSTERS, {"filterByFormula": f'LOWER({{Title}}) = LOWER("{title}")'})
     if records:
         rec = records[0]
-        _update(TABLE_CLUSTERS, rec["id"], {
+        fields = {
             "Status": "Published",
             "WP Post ID": str(wp_post_id),
             "WP Post URL": wp_post_url,
             "Published Date": date.today().isoformat(),
-        })
+        }
+        if run_id:
+            fields["Run ID"] = run_id
+        _update(TABLE_CLUSTERS, rec["id"], fields)
         pillar_name = rec["fields"].get("Parent Pillar")
         if pillar_name:
             sync_pillar_stats(pillar_name)
+
+
+def get_published_clusters_for_pillar(pillar_name):
+    """Return published cluster records for a pillar, most recent first."""
+    records = _get(TABLE_CLUSTERS, {
+        "filterByFormula": f'AND(LOWER({{Parent Pillar}}) = LOWER("{pillar_name}"), {{Status}} = "Published")'
+    })
+    records.sort(key=lambda r: r["fields"].get("Published Date", ""), reverse=True)
+    return records
 
 
 def backfill_published(posts):
