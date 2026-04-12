@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-04-12 — Rejected post backfill + Rewrite trigger
+
+### backfill_rejected.py (new)
+- One-off script to log 6 historical NEEDS_REVIEW runs (pre-Apr-2) into Airtable Rejected Posts table
+- Reads NEEDS_REVIEW.md for rejection reason, 01_outline.json for topic, 05_polish.json for post copy
+
+### airtable/client.py
+- Added `get_rewrite_records()` — returns Rejected Posts records with Status = "Rewrite"
+- Added `typecast: True` to all `_update()` calls so new single-select options auto-create on write
+
+### force_publish.py
+- Added `rewrite_run()` — loads original outline/research from run folder, creates new run dir, re-runs Draft→Edit→Polish→Approve with rejection feedback injected, publishes on approval, flips back to Needs Review on 3-attempt failure
+- Updated `poll()` to handle both Force Publish and Rewrite records from Airtable in same cron cycle
+
 ## 2026-04-09 — Uptime Kuma heartbeat added to Discord bot
 
 ### discord_bot.py

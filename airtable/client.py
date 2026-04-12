@@ -47,7 +47,7 @@ def _create(table, fields):
 
 
 def _update(table, record_id, fields):
-    r = requests.patch(f"{BASE_URL}/{table}/{record_id}", headers=HEADERS, json={"fields": fields}, timeout=15)
+    r = requests.patch(f"{BASE_URL}/{table}/{record_id}", headers=HEADERS, json={"fields": fields, "typecast": True}, timeout=15)
     r.raise_for_status()
     return r.json()
 
@@ -191,6 +191,11 @@ def log_rejected_post(topic, run_id, rejection_reason, score_breakdown, post_cop
 def get_force_publish_records():
     """Return all Rejected Posts records with Status = Force Publish."""
     return _get(TABLE_REJECTED, {"filterByFormula": "{Status} = 'Force Publish'"})
+
+
+def get_rewrite_records():
+    """Return all Rejected Posts records with Status = Rewrite."""
+    return _get(TABLE_REJECTED, {"filterByFormula": "{Status} = 'Rewrite'"})
 
 
 def update_rejected_status(record_id, status):

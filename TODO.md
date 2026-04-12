@@ -14,7 +14,7 @@
 - [ ] Set up rclone + Google Drive sync + cron (low priority — disaster recovery only)
 - [ ] Set up Google Search Console stats in morning briefing
 - [ ] Wire social posting (LinkedIn first, then Facebook/Instagram, BlueSky)
-- [ ] Test rejected post + force publish workflow end-to-end
+- [x] Test rejected post + force publish workflow end-to-end | completed: 2026-04-12 | discord_sent: true
 - [ ] Rebuild cluster_writer.py for full pillar batch mode (write all clusters at once, schedule in sequence)
 - [ ] Install gh CLI + authenticate with GitHub PAT
 - [ ] Install bat (syntax-highlighted terminal file viewer)
