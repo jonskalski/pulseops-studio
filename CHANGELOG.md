@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-04-12 — LinkedIn post generation
+
+### agents/07_linkedin.md (new)
+- LinkedIn agent prompt: dry PulseOps voice, short-line format, hook + body + soft CTA, no hashtags/emojis, 100-180 words
+
+### pipeline.py
+- Added `DISCORD_LINKEDIN_WEBHOOK_URL` env var
+- Post-publish step: runs 07_linkedin agent on polished content, logs to Airtable Social Posts, posts draft to Discord #linkedin
+
+### airtable/client.py
+- Added `log_social_post()` — creates record in Social Posts table with platform, copy, status, date, WP URL
+
+### .env
+- Added `DISCORD_LINKEDIN_WEBHOOK_URL=` (needs Discord #linkedin webhook URL to activate)
+
 ## 2026-04-12 — Pillar voice consistency for cluster posts
 
 ### pipeline.py

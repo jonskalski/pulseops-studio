@@ -2,7 +2,7 @@
 
 ## Pending
 - [ ] Add Uptime Kuma pipeline monitor — create Push monitor (1440min interval) in Uptime Kuma, wire push URL into pipeline.py end-of-run
-- [ ] Add Uptime Kuma bot monitor to SYSTEM.md
+- [x] Add Uptime Kuma bot monitor to SYSTEM.md | completed: 2026-04-09 | discord_sent: true
 - [ ] Install glow for terminal markdown rendering
 - [ ] Set up filebrowser for web-based file browsing (accessible from any device)
 - [ ] Set up AdSense account (need ~6-8 weeks of consistent publishing first)
@@ -13,13 +13,15 @@
 - [ ] Provide n8n URL + API key for workflow setup
 - [ ] Set up rclone + Google Drive sync + cron (low priority — disaster recovery only)
 - [ ] Set up Google Search Console stats in morning briefing
-- [ ] Wire social posting (LinkedIn first, then Facebook/Instagram, BlueSky)
+- [x] Wire social posting — LinkedIn agent built, pipeline wired, Airtable logging done | completed: 2026-04-12 | discord_sent: true
+- [ ] Set up Discord #linkedin channel + add DISCORD_LINKEDIN_WEBHOOK_URL to .env
+- [ ] Evaluate Buffer for automated LinkedIn queue (free tier, connect PulseOps page)
 - [x] Test rejected post + force publish workflow end-to-end | completed: 2026-04-12 | discord_sent: true
 - [ ] Rebuild cluster_writer.py for full pillar batch mode (write all clusters at once, schedule in sequence)
 - [ ] Install gh CLI + authenticate with GitHub PAT
 - [ ] Install bat (syntax-highlighted terminal file viewer)
-- [ ] Install jq (JSON debugging in terminal)
-- [ ] Install tmux (persistent SSH sessions)
+- [x] Install jq (JSON debugging in terminal) | completed: unknown | discord_sent: true
+- [x] Install tmux (persistent SSH sessions) | completed: unknown | discord_sent: true
 - [x] Install ufw + fail2ban (security before opening ports) | completed: 2026-04-03 | discord_sent: true
 - [x] Handle rejected posts — decide flow: Discord notify with ✅ retry / ❌ discard, or auto-retry with feedback injected, or manual queue | completed: 2026-04-02 | discord_sent: true
 - [ ] Schedule blog pipeline cron (7am EST)
@@ -28,7 +30,7 @@
 - [ ] Build 8pm approval reminder (n8n)
 - [x] Add Suggested Date + Published Date fields to Content Ideas, Pillars, Clusters tables in Airtable | completed: 2026-03-31 | discord_sent: true
 - [ ] Add Suggested/Rejected status options to Clusters table in Airtable
-- [ ] Backfill published_posts_index.json with existing published posts (currently empty — only populates on next publish)
+- [x] Backfill published_posts_index.json with existing published posts | completed: 2026-04-12 | discord_sent: true
 
 ## Completed
 - [x] Set up discord_bot.py as persistent systemd service (auto-restart on reboot) | completed: 2026-03-21 | discord_sent: true

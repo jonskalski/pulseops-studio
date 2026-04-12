@@ -29,6 +29,7 @@ POSTS_INDEX_FILE = BASE_DIR / "published_posts_index.json"
 WP_USER = os.environ.get("WP_USER")
 WP_APP_PASSWORD = os.environ.get("WP_APP_PASSWORD")
 DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_DRAFTS_WEBHOOK_URL") or os.environ.get("DISCORD_WEBHOOK_URL")
+DISCORD_LINKEDIN_WEBHOOK_URL = os.environ.get("DISCORD_LINKEDIN_WEBHOOK_URL")
 PEXELS_API_KEY = os.environ.get("PEXELS_API_KEY")
 
 # ── Publish Schedule ────────────────────────────────────────────────────────
@@ -580,6 +581,46 @@ def run_pipeline(topic, why=None, allowed_days=None, pillar=None):
                 mark_cluster_published(polished.get("title", topic), post_id, post_url, run_id=run_dir.name)
         except Exception as ae:
             print(f"  Airtable update failed: {ae}")
+
+        # ── LinkedIn post generation ─────────────────────────────────────
+        try:
+            discord(f"✍️ Generating LinkedIn post...")
+            import re as _re
+            plain_content = _re.sub(r'<[^>]+>', '', polished.get("content", "")).strip()
+            linkedin_input = (
+                f"Title: {polished.get('title', topic)}\n"
+                f"Meta description: {polished.get('meta_description', '')}\n"
+                f"Post excerpt:\n{plain_content[:1500]}"
+            )
+            linkedin_result = run_agent("07_linkedin", linkedin_input, run_dir)
+            post_copy = linkedin_result.get("post", "") if isinstance(linkedin_result, dict) else str(linkedin_result)
+
+            if post_copy:
+                # Log to Airtable Social Posts
+                try:
+                    from airtable.client import log_social_post
+                    log_social_post(polished.get("title", topic), "LinkedIn", post_copy, wp_post_url=post_url)
+                except Exception:
+                    pass
+
+                # Post to Discord #linkedin for approval
+                if DISCORD_LINKEDIN_WEBHOOK_URL:
+                    preview = post_copy.replace("\\n", "\n")
+                    msg = (
+                        f"**LinkedIn Draft** — {polished.get('title', topic)}\n"
+                        f"**Blog URL:** {post_url}\n\n"
+                        f"```\n{preview}\n```\n"
+                        f"_Copy and post manually when ready._"
+                    )
+                    chunks = [msg[i:i+1900] for i in range(0, len(msg), 1900)]
+                    for chunk in chunks:
+                        requests.post(DISCORD_LINKEDIN_WEBHOOK_URL, json={"content": chunk}, timeout=5)
+                    discord(f"✅ LinkedIn draft posted to #linkedin")
+                else:
+                    discord(f"⚠️ LinkedIn draft generated but DISCORD_LINKEDIN_WEBHOOK_URL not set — saved to Airtable Social Posts only.")
+        except Exception as le:
+            discord(f"⚠️ LinkedIn generation failed: {le}")
+            print(f"  LinkedIn generation failed: {le}")
     except Exception as e:
         discord(f"❌ **WordPress publish failed:** {str(e)}")
         print(f"\n❌ Publish failed: {e}")

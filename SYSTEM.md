@@ -71,6 +71,7 @@ pillar_suggester.py ──► Discord #topics ──► discord_bot.py ──►
 | **Writes** | `published_posts_index.json`: appends entry (title, url, slug, topic, date) after each publish |
 | **Writes** | Discord `DISCORD_WEBHOOK_URL`: step-by-step progress + cannibalization warnings |
 | **Writes** | `runs/NEEDS_REVIEW.md` if all 3 attempts fail approval |
+| **Post-publish** | Runs 07_linkedin agent → logs to Airtable Social Posts → posts draft to Discord #linkedin |
 | **Pillar mode** | `--pillar` flag enables voice consistency: queries Airtable for published sibling clusters, reads their `05_polish.json` intros, injects as voice/terminology reference into Draft agent |
 | **Why** | Core content engine — turns a topic into a published WordPress post |
 
@@ -141,6 +142,7 @@ pillar_suggester.py ──► Discord #topics ──► discord_bot.py ──►
 | `#pillar-post-suggestions` | `DISCORD_PILLAR_WEBHOOK_URL` | Pillar suggestions + cluster maps (pillar_suggester.py, pillar_planner.py) |
 | `#drafts` | `DISCORD_DRAFTS_WEBHOOK_URL` | Pipeline publish notifications, Force Publish confirmations |
 | `#general` or main | `DISCORD_WEBHOOK_URL` | Errors, alerts, fallback |
+| `#linkedin` | `DISCORD_LINKEDIN_WEBHOOK_URL` | LinkedIn post drafts for manual approval + posting |
 | `#todo` | `DISCORD_TODO_WEBHOOK_URL` | Completed + pending TODO items (from /summarize) |
 
 **Bot token:** `DISCORD_BOT_TOKEN` — watches `#topics` (channel ID: `1484068137547599893`) for reactions
@@ -243,4 +245,5 @@ pillar_suggester.py ──► Discord #topics ──► discord_bot.py ──►
 | `DISCORD_WEBHOOK_URL` | pipeline.py, pillar_planner.py, pillar_suggester.py | General Discord channel |
 | `DISCORD_TOPICS_WEBHOOK_URL` | topic_picker.py | Topics channel |
 | `DISCORD_TODO_WEBHOOK_URL` | /summarize skill | TODO channel |
+| `DISCORD_LINKEDIN_WEBHOOK_URL` | pipeline.py | LinkedIn draft posting to #linkedin (needs channel setup) |
 | `NOTION_API_KEY` | /summarize skill | Session logging |

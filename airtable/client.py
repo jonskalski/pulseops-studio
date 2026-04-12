@@ -205,6 +205,19 @@ def get_force_publish_records():
     return _get(TABLE_REJECTED, {"filterByFormula": "{Status} = 'Force Publish'"})
 
 
+def log_social_post(topic, platform, post_copy, wp_post_url=""):
+    """Log a generated social post to the Social Posts table."""
+    from datetime import date
+    return _create(TABLE_SOCIAL, {
+        "Topic": topic,
+        "Platform": platform,
+        "Post Copy": post_copy[:100000],
+        "Status": "Pending Review",
+        "Date": date.today().isoformat(),
+        **({"WP Post URL": wp_post_url} if wp_post_url else {}),
+    })
+
+
 def get_rewrite_records():
     """Return all Rejected Posts records with Status = Rewrite."""
     return _get(TABLE_REJECTED, {"filterByFormula": "{Status} = 'Rewrite'"})
