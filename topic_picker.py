@@ -140,14 +140,19 @@ def post_to_discord(topics):
 
     for topic in topics:
         msg = f"**Topic Suggestion**\n**{topic['topic']}**\n_{topic['why']}_\n\nReact ✅ to publish, ❌ to skip."
-        requests.post(DISCORD_TOPICS_WEBHOOK_URL, json={"content": msg}, timeout=10)
+        r = requests.post(DISCORD_TOPICS_WEBHOOK_URL, json={"content": msg}, timeout=10)
+        if r.status_code in (200, 204):
+            print(f"  Posted: {topic['topic']}")
+        else:
+            print(f"  ERROR posting to Discord (HTTP {r.status_code}): {topic['topic']}")
+            print(f"    Response: {r.text[:200]}")
+            continue
         append_pending_topic(topic["topic"])
         if airtable_enabled:
             try:
                 create_suggested(topic["topic"], why=topic.get("why"))
             except Exception as e:
                 print(f"  Airtable write failed for '{topic['topic']}': {e}")
-        print(f"  Posted: {topic['topic']}")
 
 # ── Main ─────────────────────────────────────────────────────────────────────
 
