@@ -360,7 +360,26 @@ def publish_to_wordpress(post_data, keyword=None, allowed_days=None):
         timeout=30,
     )
     r.raise_for_status()
-    return r.json()
+    post = r.json()
+
+    # Apply Astra page-builder meta so the dark Elementor post template renders correctly
+    astra_meta = {
+        "site-sidebar-layout": "no-sidebar",
+        "site-content-layout": "page-builder",
+        "ast-site-content-layout": "full-width-container",
+        "site-content-style": "unboxed",
+        "theme-transparent-header-meta": "enabled",
+        "site-post-title": "disabled",
+        "ast-featured-img": "disabled",
+    }
+    requests.post(
+        f"{WP_URL}/wp-json/wp/v2/posts/{post['id']}",
+        auth=(WP_USER, WP_APP_PASSWORD),
+        json={"meta": astra_meta},
+        timeout=15,
+    )
+
+    return post
 
 # ── Main Pipeline ────────────────────────────────────────────────────────────
 

@@ -1,6 +1,7 @@
 # TODO
 
 ## Pending
+- [ ] Auto-assign WP category (CRM/Automation/Spreadsheets/Analytics) to posts at publish time in pipeline.py — needed so Start Here page on pulseops-website can eventually pull posts dynamically by bucket instead of staying hardcoded
 - [ ] Add Uptime Kuma pipeline monitor — create Push monitor (1440min interval) in Uptime Kuma, wire push URL into pipeline.py end-of-run
 - [x] Add Uptime Kuma bot monitor to SYSTEM.md | completed: 2026-04-09 | discord_sent: true
 - [ ] Install glow for terminal markdown rendering
