@@ -324,17 +324,22 @@ def publish_to_wordpress(post_data, keyword=None, allowed_days=None):
         if featured_media_id:
             print(f"  Image uploaded (ID: {featured_media_id}, photo by {photographer})")
 
-    # Inject image into content after first paragraph
+    # Inject image into content after first paragraph.
+    # Use Gutenberg block format with attachment ID so Yoast deduplicates against
+    # the featured image in the sitemap (WP.com serves featured images via Photon CDN,
+    # making the URL differ from the raw upload URL — block ID is the dedup key).
     content = post_data["content"]
     alt_text = keyword or search_term  # keyword-descriptive alt text, not post title
-    if uploaded_image_url and "</p>" in content:
+    if uploaded_image_url and featured_media_id and "</p>" in content:
         img_html = (
+            f'\n<!-- wp:image {{"id":{featured_media_id},"sizeSlug":"large","linkDestination":"none"}} -->\n'
             f'<figure class="wp-block-image size-large">'
-            f'<img src="{uploaded_image_url}" alt="{alt_text}" />'
-            f'</figure>'
+            f'<img src="{uploaded_image_url}" alt="{alt_text}" class="wp-image-{featured_media_id}" />'
+            f'</figure>\n'
+            f'<!-- /wp:image -->\n'
         )
         insert_at = content.index("</p>") + 4
-        content = content[:insert_at] + "\n" + img_html + "\n" + content[insert_at:]
+        content = content[:insert_at] + img_html + content[insert_at:]
 
     # Append JSON-LD schema markup
     pub_date = next_publish_slot(allowed_days=allowed_days)

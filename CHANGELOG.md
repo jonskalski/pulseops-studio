@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-04-19 — Fix duplicate featured images in sitemap
+
+### pipeline.py
+- Changed in-content image injection from raw `<figure>` tag to Gutenberg block format (`<!-- wp:image {"id":N} -->`) with attachment ID; Yoast deduplicates by attachment ID rather than URL, fixing the issue where WP.com's Photon CDN created different URLs for the featured image vs the content image
+
 ## 2026-04-12 — LinkedIn post generation
 
 ### agents/07_linkedin.md (new)
