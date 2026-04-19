@@ -23,7 +23,7 @@ Review the polished post against these criteria. Be specific in your feedback �
 
 ### SEO Basics (Pass/Fail)
 - Is the target keyword in the title and intro?
-- Is the meta description 150-160 characters?
+- Is the meta description 150-160 characters? (The pipeline measures this with len() before you see the post and auto-corrects — only fail if it's still dramatically out of range.)
 - Is the title under 60 characters?
 - Does the title use first-person framing or an emotional hook rather than a generic list format ("5 Ways to...", "10 Tips for...")? If it's a list title, FAIL and suggest a rewrite.
 
@@ -34,12 +34,18 @@ Review the polished post against these criteria. Be specific in your feedback �
 ### Structure (Pass/Fail)
 - Does the intro hook land in the first 2 sentences?
 - Does the conclusion have a real takeaway?
-- Is the post 1,500-2,000 words? Hard fail if outside this range. Count carefully.
+- Is the post 1,500-2,000 words? Hard fail if outside this range. (The pipeline measures this with an exact word counter before you see the post and auto-corrects — only fail if it's still dramatically out of range, not on borderline estimates.)
 - Examples: any illustrative examples are brief, unnamed, and grounding rather than storytelling. No fictional characters, no biography.
 
 ## Decision
+
+**Before writing any output**, work through each criterion to a final verdict. Do not show your reasoning process in the output. Only write confirmed failures.
+
+Rules:
 - If ALL criteria pass: APPROVE
 - If ANY criteria fail: DENY with specific, actionable comments naming the exact section or sentence that fails
+- Do not contradict yourself in comments. If you are unsure whether something fails, it passes.
+- Do not walk back a pass or fail in the comments. Finalize your verdict on each criterion before writing anything.
 
 ## Output Format
 Return ONLY valid JSON:
@@ -53,5 +59,5 @@ Return ONLY valid JSON:
     "eeat": "pass" or "fail",
     "structure": "pass" or "fail"
   },
-  "comments": "specific feedback if DENIED — name the exact section header or quote the specific sentence that needs to change"
+  "comments": "confirmed failures only — one clear fix per failure, no reasoning chain, no self-corrections"
 }

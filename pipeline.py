@@ -250,6 +250,76 @@ def extract_json(text):
             return json.loads(brace_match.group(1))
         raise
 
+def count_post_words(html_content):
+    """Strip HTML tags and entities, return word count."""
+    plain = re.sub(r'<[^>]+>', ' ', html_content)
+    plain = re.sub(r'&[a-zA-Z]+;', ' ', plain)
+    return len(plain.split())
+
+
+def validate_and_repolish(polished, attempt_label, run_dir, approver_feedback=None):
+    """
+    Measure word count and meta description length after Polish.
+    If either is out of spec, re-prompt Polish with exact numbers (up to 2 correction rounds).
+    Returns the corrected polished dict.
+    """
+    WORD_MIN, WORD_MAX = 1500, 2000
+    META_MIN, META_MAX = 150, 160
+
+    for correction in range(2):
+        if not isinstance(polished, dict):
+            break
+        content  = polished.get("content", "")
+        meta     = polished.get("meta_description", "")
+        words    = count_post_words(content)
+        meta_len = len(meta)
+
+        issues = []
+        if words < WORD_MIN:
+            issues.append(
+                f"Word count is {words} — must be at least {WORD_MIN}. "
+                f"Add {WORD_MIN - words + 50}+ words to the thinnest section(s)."
+            )
+        elif words > WORD_MAX:
+            issues.append(
+                f"Word count is {words} — must be under {WORD_MAX}. "
+                f"Cut {words - WORD_MAX + 20}+ words from the longest section."
+            )
+
+        if meta_len < META_MIN:
+            issues.append(
+                f"Meta description is {meta_len} characters — must be {META_MIN}-{META_MAX}. "
+                f"Add {META_MIN - meta_len}–{META_MAX - meta_len} characters of specific detail. "
+                f"Current meta: \"{meta}\""
+            )
+        elif meta_len > META_MAX:
+            issues.append(
+                f"Meta description is {meta_len} characters — must be {META_MIN}-{META_MAX}. "
+                f"Trim {meta_len - META_MAX} characters. "
+                f"Current meta: \"{meta}\""
+            )
+
+        if not issues:
+            break
+
+        fix_note = "\n".join(f"- {i}" for i in issues)
+        discord(
+            f"🔧 **Auto-fix** ({attempt_label}, correction {correction+1}/2) — "
+            + "; ".join(issues)
+        )
+        print(f"  Auto-fix ({correction+1}/2): " + "; ".join(issues))
+        polish_input = (
+            f"Post:\n{json.dumps(polished, indent=2)}\n\n"
+            f"PIPELINE MEASUREMENT — fix these before returning (these are exact counts, not estimates):\n"
+            f"{fix_note}"
+        )
+        if approver_feedback:
+            polish_input += f"\n\nApprover feedback from previous attempt:\n{approver_feedback}"
+        polished = run_agent("05_polish", polish_input, run_dir)
+
+    return polished
+
+
 def run_agent(name, user_message, run_dir):
     prompt_file = AGENTS_DIR / f"{name}.md"
     system_prompt = prompt_file.read_text()
@@ -495,6 +565,12 @@ def run_pipeline(topic, why=None, allowed_days=None, pillar=None):
         polish_notes = p.get('polish_notes', []) if isinstance(p, dict) else []
         notes_preview = "\n".join(f"  - {n}" for n in polish_notes) if polish_notes else "  (no notes)"
         discord(f"✅ Polish complete — {attempt_label}\n{notes_preview}")
+        # Measure word count and meta desc length; auto-correct before Approver sees it
+        p = validate_and_repolish(p, attempt_label, run_dir, approver_feedback=approver_feedback)
+        if isinstance(p, dict):
+            words    = count_post_words(p.get("content", ""))
+            meta_len = len(p.get("meta_description", ""))
+            discord(f"📏 Measurements — words: {words}, meta: {meta_len} chars")
         discord(f"🔍 Approver reviewing — {attempt_label}...")
         a = run_agent("06_approver", f"Post:\n{json.dumps(p, indent=2)}", run_dir)
         return p, a

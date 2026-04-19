@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-04-19 — Pipeline rejection audit + measurement fixes
+
+### pipeline.py
+- Added `count_post_words()` helper — strips HTML tags and entities, returns exact word count via `len(split())`
+- Added `validate_and_repolish()` — runs after every Polish step, before Approver; measures word count and meta description `len()` exactly; if either is out of spec (1500-2000 words, 150-160 chars), re-prompts Polish with exact delta, up to 2 correction rounds
+- `polish_and_approve()` now calls `validate_and_repolish()` between Polish and Approver, and logs final measurements to Discord
+
+### agents/05_polish.md
+- Removed "Estimate the word count" instruction — replaced with "write to 1,700–1,900 words, pipeline measures after you return"
+- Added explicit meta description instruction: 150–160 chars, count before returning, do not estimate
+
+### agents/06_approver.md
+- Added "finalize verdict before writing" rule — stops Approver from reasoning out loud in comments and walking back pass/fail decisions mid-response
+- Updated word count and meta description criteria to note pipeline pre-validates both
+
+### agents/04_edit.md
+- Removed "verify it's 150-160 characters" from meta description check — exact count is enforced by pipeline after Polish
+
+### TODO.md
+- Added 13 new items covering: scenario mode drift, keyword-in-title programmatic gate, Draft word count bias, draft/polish target misalignment, stale outline hardcoded links, Research agent stat hallucination, attempt 3 escalation rethink, force_publish.py missing measurement fixes, rewrite Polish feedback gap, weekly recurring review process
+
 ## 2026-04-19 — Fix Discord topics webhook pointing to wrong channel
 
 ### .env

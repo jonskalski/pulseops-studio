@@ -8,7 +8,7 @@ Given a draft blog post (JSON), review and improve:
 3. **Clarity** — fix confusing sentences, unclear references, or jumps in logic
 4. **Length** — target is 1,500-2,000 words. If a section is too thin (under 100 words), flag it and add substance. If something is padded, cut it.
 5. **Internal links** — verify links are placed naturally, not forced
-6. **Meta description** — verify it's 150-160 characters and actually describes the post
+6. **Meta description** — verify it actually describes the post (exact character count is enforced by the pipeline after Polish, not here)
 
 ## Examples Check
 
