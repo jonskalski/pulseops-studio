@@ -24,7 +24,7 @@ except Exception:
     airtable_enabled = False
 
 BOT_TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
-TOPICS_CHANNEL_ID = 1484068137547599893
+TOPICS_CHANNEL_ID = 1487257451664244777
 WRITE_THIS_CHANNEL_ID = 1484742781514682368
 N8N_WEBHOOK_URL = "https://n8n.srv1491199.hstgr.cloud/webhook/pulseops-reaction"
 UPTIME_KUMA_PUSH_URL = "https://status.srv1491199.hstgr.cloud/api/push/wqBuKbSkWQ?status=up&msg=OK&ping="

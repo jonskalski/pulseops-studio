@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-04-19 — Fix Discord topics webhook pointing to wrong channel
+
+### .env
+- Updated DISCORD_TOPICS_WEBHOOK_URL to correct Suggestions Bot webhook (was pointing to Spidey Bot channel)
+
+### discord_bot.py
+- Updated TOPICS_CHANNEL_ID from 1484068137547599893 to 1487257451664244777 to match new webhook channel
+
+### TODO.md
+- Added PulseOps Control Panel webapp item (Flask replacement for Discord approval flow)
+- Added Discord platform evaluation item
+
 ## 2026-04-19 — Fix duplicate featured images in sitemap
 
 ### pipeline.py

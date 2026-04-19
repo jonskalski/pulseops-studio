@@ -1,6 +1,7 @@
 # TODO
 
 ## Pending
+- [ ] Build PulseOps Control Panel — Flask webapp replacing Discord: topic approval, draft approval, pillar approval, write-this input, ntfy.sh push notifications. Mirrors current Discord reaction flow. Run /projectspec when ready to build. for topic/draft approvals, morning briefing, and write-this trigger — Discord has been brittle (wrong channels, silent webhook failures, bot duplication)
 - [ ] Auto-assign WP category (CRM/Automation/Spreadsheets/Analytics) to posts at publish time in pipeline.py — needed so Start Here page on pulseops-website can eventually pull posts dynamically by bucket instead of staying hardcoded
 - [ ] Add Uptime Kuma pipeline monitor — create Push monitor (1440min interval) in Uptime Kuma, wire push URL into pipeline.py end-of-run
 - [x] Add Uptime Kuma bot monitor to SYSTEM.md | completed: 2026-04-09 | discord_sent: true
