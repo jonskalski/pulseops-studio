@@ -29,6 +29,7 @@ POSTS_INDEX_FILE = BASE_DIR / "published_posts_index.json"
 WP_USER = os.environ.get("WP_USER")
 WP_APP_PASSWORD = os.environ.get("WP_APP_PASSWORD")
 DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_DRAFTS_WEBHOOK_URL") or os.environ.get("DISCORD_WEBHOOK_URL")
+DISCORD_PIPELINE_LOG_URL = os.environ.get("DISCORD_PIPELINE_LOG_WEBHOOK_URL")
 DISCORD_LINKEDIN_WEBHOOK_URL = os.environ.get("DISCORD_LINKEDIN_WEBHOOK_URL")
 PEXELS_API_KEY = os.environ.get("PEXELS_API_KEY")
 
@@ -127,16 +128,33 @@ def update_posts_index(title, url, slug, topic):
 
 # ── Schema Markup ────────────────────────────────────────────────────────────
 
+def detect_schema_type(post_data):
+    """Return the schema type string that would be used for this post."""
+    title_lower = post_data.get("title", "").lower()
+    content = post_data.get("content", "")
+    howto_signals = ["how to ", "step-by-step", "steps to ", "guide to "]
+    if any(s in title_lower for s in howto_signals):
+        steps = re.findall(r'<li[^>]*>(.*?)</li>', content, re.IGNORECASE | re.DOTALL)
+        valid_steps = [s for s in steps if len(re.sub(r'<[^>]+>', '', s).strip()) > 20]
+        if valid_steps:
+            return "HowTo"
+    return "Article"
+
+
+def count_words(html_content):
+    """Strip HTML tags and return word count."""
+    text = re.sub(r'<[^>]+>', ' ', html_content)
+    return len(text.split())
+
+
 def generate_schema_markup(post_data, pub_date_str=""):
     """Generate JSON-LD schema. Defaults to Article, upgrades to HowTo."""
     content = post_data.get("content", "")
     title = post_data.get("title", "")
-    title_lower = title.lower()
     date_str = pub_date_str[:10] if pub_date_str else datetime.now().strftime("%Y-%m-%d")
+    schema_type = detect_schema_type(post_data)
 
-    # HowTo: title signals step-by-step instructional content
-    howto_signals = ["how to ", "step-by-step", "steps to ", "guide to "]
-    if any(s in title_lower for s in howto_signals):
+    if schema_type == "HowTo":
         steps = []
         for i, m in enumerate(
             re.finditer(r'<li[^>]*>(.*?)</li>', content, re.IGNORECASE | re.DOTALL), 1
@@ -211,14 +229,23 @@ def next_publish_slot(allowed_days=None):
 
 # ── Helpers ─────────────────────────────────────────────────────────────────
 
+def _post_webhook(url, msg):
+    try:
+        for chunk in [msg[i:i+1900] for i in range(0, len(msg), 1900)]:
+            requests.post(url, json={"content": chunk}, timeout=5)
+    except Exception:
+        pass
+
 def discord(msg):
+    """Post a key event to #drafts."""
     if DISCORD_WEBHOOK_URL:
-        try:
-            chunks = [msg[i:i+1900] for i in range(0, len(msg), 1900)]
-            for chunk in chunks:
-                requests.post(DISCORD_WEBHOOK_URL, json={"content": chunk}, timeout=5)
-        except Exception:
-            pass
+        _post_webhook(DISCORD_WEBHOOK_URL, msg)
+
+def discord_log(msg):
+    """Post a step-level progress update to #pipeline-logs (falls back to #drafts)."""
+    url = DISCORD_PIPELINE_LOG_URL or DISCORD_WEBHOOK_URL
+    if url:
+        _post_webhook(url, msg)
 
 def call_claude(system_prompt, user_message, model=SONNET):
     headers = {
@@ -458,7 +485,7 @@ def publish_to_wordpress(post_data, keyword=None, allowed_days=None):
 
 # ── Main Pipeline ────────────────────────────────────────────────────────────
 
-def run_pipeline(topic, why=None, allowed_days=None, pillar=None):
+def run_pipeline(topic, why=None, allowed_days=None, pillar=None, cluster_id=None):
     if not ANTHROPIC_API_KEY:
         print("ERROR: ANTHROPIC_API_KEY not set")
         sys.exit(1)
@@ -513,23 +540,23 @@ def run_pipeline(topic, why=None, allowed_days=None, pillar=None):
         posts_context = ""
 
     # ── Step 1: Outline ──────────────────────────────────────────────────
-    discord(f"⏳ Step 1/6 — Outline Agent running...")
+    discord_log(f"⏳ Step 1/6 — Outline Agent running...")
     outline = run_agent("01_outline", f"Topic: {topic}", run_dir)
     sections = outline.get("sections", [])
     section_list = "\n".join(f"  {i+1}. {s.get('header','?')}" for i, s in enumerate(sections))
-    discord(f"✅ Step 1/6 — Outline complete\n**Title:** {outline.get('title', '?')}\n**Keyword:** {outline.get('target_keyword', '?')}\n**Sections:**\n{section_list}")
+    discord_log(f"✅ Step 1/6 — Outline complete\n**Title:** {outline.get('title', '?')}\n**Keyword:** {outline.get('target_keyword', '?')}\n**Sections:**\n{section_list}")
 
     # ── Step 2: Research ─────────────────────────────────────────────────
-    discord(f"⏳ Step 2/6 — Research Agent running...")
+    discord_log(f"⏳ Step 2/6 — Research Agent running...")
     research = run_agent("02_research", f"Outline:\n{json.dumps(outline, indent=2)}", run_dir)
     hook_angles = research.get("hook_angles", []) if isinstance(research, dict) else []
     pain_points = research.get("pain_points", []) if isinstance(research, dict) else []
     angle_preview = hook_angles[0][:120] if hook_angles else "none"
     pain_preview = pain_points[0][:100] if pain_points else "none"
-    discord(f"✅ Step 2/6 — Research complete\n**Top angle:** {angle_preview}\n**Top pain point:** {pain_preview}")
+    discord_log(f"✅ Step 2/6 — Research complete\n**Top angle:** {angle_preview}\n**Top pain point:** {pain_preview}")
 
     # ── Step 3: Draft ────────────────────────────────────────────────────
-    discord(f"⏳ Step 3/6 — Draft Agent running...")
+    discord_log(f"⏳ Step 3/6 — Draft Agent running...")
     linking_note = f"\n\nExisting posts (use sparingly — 1-2 max, only mid-sentence where naturally relevant, never at the end of a section as a habit):\n{posts_context}" if posts_context else ""
     why_note = f"\n\nTopic context: {why}" if why else ""
     pillar_note = get_pillar_voice_context(pillar) if pillar else ""
@@ -538,14 +565,14 @@ def run_pipeline(topic, why=None, allowed_days=None, pillar=None):
     draft_content = draft.get('content', '') if isinstance(draft, dict) else ''
     word_count = len(draft_content.split())
     first_sentence = draft_content[:200].strip().split('. ')[0] + '.' if draft_content else '?'
-    discord(f"✅ Step 3/6 — Draft complete (~{word_count} words)\n**Intro:** {first_sentence}")
+    discord_log(f"✅ Step 3/6 — Draft complete (~{word_count} words)\n**Intro:** {first_sentence}")
 
     # ── Step 4: Edit ─────────────────────────────────────────────────────
-    discord(f"⏳ Step 4/6 — Edit Agent running...")
+    discord_log(f"⏳ Step 4/6 — Edit Agent running...")
     edited = run_agent("04_edit", f"Draft:\n{json.dumps(draft, indent=2)}", run_dir)
     edit_notes = edited.get('edit_notes', []) if isinstance(edited, dict) else []
     notes_preview = "\n".join(f"  - {n}" for n in edit_notes)
-    discord(f"✅ Step 4/6 — Edit complete ({len(edit_notes)} edits)\n{notes_preview}")
+    discord_log(f"✅ Step 4/6 — Edit complete ({len(edit_notes)} edits)\n{notes_preview}")
 
     # ── Step 5 & 6: Polish + Approve — 3-attempt escalating retry ────────
     # Attempt 1: Polish → Approve
@@ -557,21 +584,21 @@ def run_pipeline(topic, why=None, allowed_days=None, pillar=None):
     last_comments = ""
 
     def polish_and_approve(post_input, attempt_label, run_dir, approver_feedback=None):
-        discord(f"⏳ Polish — {attempt_label}...")
+        discord_log(f"⏳ Polish — {attempt_label}...")
         polish_input = f"Post:\n{json.dumps(post_input, indent=2)}"
         if approver_feedback:
             polish_input += f"\n\nApprover feedback from previous attempt (fix these issues):\n{approver_feedback}"
         p = run_agent("05_polish", polish_input, run_dir)
         polish_notes = p.get('polish_notes', []) if isinstance(p, dict) else []
         notes_preview = "\n".join(f"  - {n}" for n in polish_notes) if polish_notes else "  (no notes)"
-        discord(f"✅ Polish complete — {attempt_label}\n{notes_preview}")
+        discord_log(f"✅ Polish complete — {attempt_label}\n{notes_preview}")
         # Measure word count and meta desc length; auto-correct before Approver sees it
         p = validate_and_repolish(p, attempt_label, run_dir, approver_feedback=approver_feedback)
         if isinstance(p, dict):
             words    = count_post_words(p.get("content", ""))
             meta_len = len(p.get("meta_description", ""))
-            discord(f"📏 Measurements — words: {words}, meta: {meta_len} chars")
-        discord(f"🔍 Approver reviewing — {attempt_label}...")
+            discord_log(f"📏 Measurements — words: {words}, meta: {meta_len} chars")
+        discord_log(f"🔍 Approver reviewing — {attempt_label}...")
         a = run_agent("06_approver", f"Post:\n{json.dumps(p, indent=2)}", run_dir)
         return p, a
 
@@ -580,7 +607,7 @@ def run_pipeline(topic, why=None, allowed_days=None, pillar=None):
     if isinstance(approval, dict) and approval.get("decision") == "APPROVED":
         scores = approval.get("scores", {})
         scores_str = "  " + "  ".join(f"{k}: {v}" for k, v in scores.items())
-        discord(f"✅ **APPROVED** on attempt 1\n{scores_str}")
+        discord_log(f"✅ **APPROVED** on attempt 1\n{scores_str}")
         approved = True
     else:
         last_comments = approval.get("comments", "No specific feedback") if isinstance(approval, dict) else str(approval)
@@ -588,16 +615,16 @@ def run_pipeline(topic, why=None, allowed_days=None, pillar=None):
         failed = [k for k, v in scores.items() if v == "fail"]
         passed = [k for k, v in scores.items() if v == "pass"]
         score_summary = f"**Failed:** {', '.join(failed) or 'unknown'}  |  **Passed:** {', '.join(passed) or 'none'}"
-        discord(f"❌ **DENIED** (attempt 1)\n{score_summary}\n**Reason:** {last_comments}")
+        discord_log(f"❌ **DENIED** (attempt 1)\n{score_summary}\n**Reason:** {last_comments}")
 
     # Attempt 2: Polish again → Approve
     if not approved:
-        discord(f"🔄 Sending back to Polish (attempt 2/3)...")
+        discord_log(f"🔄 Sending back to Polish (attempt 2/3)...")
         polished, approval = polish_and_approve(polished, "attempt 2/3", run_dir, approver_feedback=last_comments)
         if isinstance(approval, dict) and approval.get("decision") == "APPROVED":
             scores = approval.get("scores", {})
             scores_str = "  " + "  ".join(f"{k}: {v}" for k, v in scores.items())
-            discord(f"✅ **APPROVED** on attempt 2\n{scores_str}")
+            discord_log(f"✅ **APPROVED** on attempt 2\n{scores_str}")
             approved = True
         else:
             last_comments = approval.get("comments", "No specific feedback") if isinstance(approval, dict) else str(approval)
@@ -605,11 +632,11 @@ def run_pipeline(topic, why=None, allowed_days=None, pillar=None):
             failed = [k for k, v in scores.items() if v == "fail"]
             passed = [k for k, v in scores.items() if v == "pass"]
             score_summary = f"**Failed:** {', '.join(failed) or 'unknown'}  |  **Passed:** {', '.join(passed) or 'none'}"
-            discord(f"❌ **DENIED** (attempt 2)\n{score_summary}\n**Reason:** {last_comments}")
+            discord_log(f"❌ **DENIED** (attempt 2)\n{score_summary}\n**Reason:** {last_comments}")
 
     # Attempt 3: Rerun Draft with approver feedback → Polish → Approve
     if not approved:
-        discord(f"🔄 Rerunning Draft with approver feedback (attempt 3/3)...")
+        discord_log(f"🔄 Rerunning Draft with approver feedback (attempt 3/3)...")
         draft_retry_input = (
             f"Outline:\n{json.dumps(outline, indent=2)}\n\n"
             f"Research:\n{json.dumps(research, indent=2)}\n\n"
@@ -620,12 +647,12 @@ def run_pipeline(topic, why=None, allowed_days=None, pillar=None):
         if why:
             draft_retry_input += f"\n\nTopic context: {why}"
         redraft = run_agent("03_draft", draft_retry_input, run_dir)
-        discord(f"✅ Draft rerun complete")
+        discord_log(f"✅ Draft rerun complete")
         polished, approval = polish_and_approve(redraft, "attempt 3/3", run_dir, approver_feedback=last_comments)
         if isinstance(approval, dict) and approval.get("decision") == "APPROVED":
             scores = approval.get("scores", {})
             scores_str = "  " + "  ".join(f"{k}: {v}" for k, v in scores.items())
-            discord(f"✅ **APPROVED** on attempt 3\n{scores_str}")
+            discord_log(f"✅ **APPROVED** on attempt 3\n{scores_str}")
             approved = True
         else:
             last_comments = approval.get("comments", "No specific feedback") if isinstance(approval, dict) else str(approval)
@@ -633,7 +660,7 @@ def run_pipeline(topic, why=None, allowed_days=None, pillar=None):
             failed = [k for k, v in scores.items() if v == "fail"]
             passed = [k for k, v in scores.items() if v == "pass"]
             score_summary = f"**Failed:** {', '.join(failed) or 'unknown'}  |  **Passed:** {', '.join(passed) or 'none'}"
-            discord(f"❌ **DENIED** (attempt 3) — flagging for manual review\n{score_summary}\n**Reason:** {last_comments}")
+            discord(f"❌ **NEEDS REVIEW** (all 3 attempts failed)\n{score_summary}\n**Reason:** {last_comments}")
             (run_dir / "NEEDS_REVIEW.md").write_text(f"# Needs Manual Review\n\nApprover feedback (all 3 attempts failed):\n{last_comments}\n")
 
     if not approved:
@@ -656,7 +683,7 @@ def run_pipeline(topic, why=None, allowed_days=None, pillar=None):
         return
 
     # ── Publish ──────────────────────────────────────────────────────────
-    discord(f"📤 Scheduling to WordPress...")
+    discord_log(f"📤 Scheduling to WordPress...")
     try:
         keyword = outline.get("target_keyword", "") if isinstance(outline, dict) else ""
         result = publish_to_wordpress(polished, keyword=keyword, allowed_days=allowed_days)
@@ -678,13 +705,23 @@ def run_pipeline(topic, why=None, allowed_days=None, pillar=None):
             from airtable.client import mark_published, mark_cluster_published
             mark_published(topic, post_id, post_url)
             if pillar:
-                mark_cluster_published(polished.get("title", topic), post_id, post_url, run_id=run_dir.name)
+                mark_cluster_published(
+                    polished.get("title", topic), post_id, post_url,
+                    run_id=run_dir.name,
+                    cluster_id=cluster_id,
+                    published_title=polished.get("title", ""),
+                    keyword=keyword,
+                    wp_slug=polished.get("slug", ""),
+                    meta_description=polished.get("meta_description", ""),
+                    schema_type=detect_schema_type(polished),
+                    word_count=count_words(polished.get("content", "")),
+                )
         except Exception as ae:
             print(f"  Airtable update failed: {ae}")
 
         # ── LinkedIn post generation ─────────────────────────────────────
         try:
-            discord(f"✍️ Generating LinkedIn post...")
+            discord_log(f"✍️ Generating LinkedIn post...")
             import re as _re
             plain_content = _re.sub(r'<[^>]+>', '', polished.get("content", "")).strip()
             linkedin_input = (
@@ -715,11 +752,11 @@ def run_pipeline(topic, why=None, allowed_days=None, pillar=None):
                     chunks = [msg[i:i+1900] for i in range(0, len(msg), 1900)]
                     for chunk in chunks:
                         requests.post(DISCORD_LINKEDIN_WEBHOOK_URL, json={"content": chunk}, timeout=5)
-                    discord(f"✅ LinkedIn draft posted to #linkedin")
+                    discord_log(f"✅ LinkedIn draft posted to #linkedin")
                 else:
-                    discord(f"⚠️ LinkedIn draft generated but DISCORD_LINKEDIN_WEBHOOK_URL not set — saved to Airtable Social Posts only.")
+                    discord_log(f"⚠️ LinkedIn draft generated but DISCORD_LINKEDIN_WEBHOOK_URL not set — saved to Airtable Social Posts only.")
         except Exception as le:
-            discord(f"⚠️ LinkedIn generation failed: {le}")
+            discord_log(f"⚠️ LinkedIn generation failed: {le}")
             print(f"  LinkedIn generation failed: {le}")
     except Exception as e:
         discord(f"❌ **WordPress publish failed:** {str(e)}")
@@ -732,7 +769,8 @@ if __name__ == "__main__":
     parser.add_argument("--why", default=None, help="Context: why this topic is timely and the SMB angle")
     parser.add_argument("--publish-days", default=None, help="Comma-separated weekday ints to restrict scheduling (e.g. '1,3' for Tue/Thu)")
     parser.add_argument("--pillar", default=None, help="Parent pillar name — enables voice consistency context from sibling posts")
+    parser.add_argument("--cluster-id", default=None, help="Airtable cluster record ID for reliable publish tracking")
     args = parser.parse_args()
     topic = " ".join(args.topic)
     allowed_days = [int(d) for d in args.publish_days.split(",")] if args.publish_days else None
-    run_pipeline(topic, why=args.why, allowed_days=allowed_days, pillar=args.pillar)
+    run_pipeline(topic, why=args.why, allowed_days=allowed_days, pillar=args.pillar, cluster_id=args.cluster_id)

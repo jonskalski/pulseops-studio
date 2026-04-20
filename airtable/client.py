@@ -135,24 +135,39 @@ def create_cluster(title, pillar_name, angle=None, priority="Normal"):
     })
 
 
-def mark_cluster_published(title, wp_post_id, wp_post_url, run_id=None):
+def mark_cluster_published(title, wp_post_id, wp_post_url, run_id=None, cluster_id=None,
+                           published_title=None, keyword=None, wp_slug=None,
+                           meta_description=None, schema_type=None, word_count=None):
     """Flip cluster status to Published after WP post goes live."""
     from datetime import date
-    records = _get(TABLE_CLUSTERS, {"filterByFormula": f'LOWER({{Title}}) = LOWER("{title}")'})
-    if records:
+    fields = {
+        "Status": "Published",
+        "WP Post ID": str(wp_post_id),
+        "WP Post URL": wp_post_url,
+        "Published Date": date.today().isoformat(),
+    }
+    if run_id:           fields["Run ID"] = run_id
+    if published_title:  fields["Published Title"] = published_title
+    if keyword:          fields["Keyword"] = keyword
+    if wp_slug:          fields["WP Slug"] = wp_slug
+    if meta_description: fields["Meta Description"] = meta_description
+    if schema_type:      fields["Schema Type"] = schema_type
+    if word_count:       fields["Word Count"] = word_count
+
+    if cluster_id:
+        _update(TABLE_CLUSTERS, cluster_id, fields)
+        rec = _get(TABLE_CLUSTERS, {"filterByFormula": f'RECORD_ID() = "{cluster_id}"'})
+        pillar_name = rec[0]["fields"].get("Parent Pillar") if rec else None
+    else:
+        records = _get(TABLE_CLUSTERS, {"filterByFormula": f'LOWER({{Title}}) = LOWER("{title}")'})
+        if not records:
+            return
         rec = records[0]
-        fields = {
-            "Status": "Published",
-            "WP Post ID": str(wp_post_id),
-            "WP Post URL": wp_post_url,
-            "Published Date": date.today().isoformat(),
-        }
-        if run_id:
-            fields["Run ID"] = run_id
         _update(TABLE_CLUSTERS, rec["id"], fields)
         pillar_name = rec["fields"].get("Parent Pillar")
-        if pillar_name:
-            sync_pillar_stats(pillar_name)
+
+    if pillar_name:
+        sync_pillar_stats(pillar_name)
 
 
 def get_published_clusters_for_pillar(pillar_name):

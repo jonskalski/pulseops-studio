@@ -8,6 +8,7 @@ Posts land as WP drafts and notify Discord #drafts for approval before schedulin
 
 import os
 import sys
+import random
 import subprocess
 import requests
 sys.path.insert(0, "/root/pulseops-studio")
@@ -19,13 +20,11 @@ DISCORD_WEBHOOK = os.environ.get("DISCORD_DRAFTS_WEBHOOK_URL") or os.environ.get
 
 
 def get_next_cluster():
-    """Return the next Suggested cluster record, ordered by creation time."""
+    """Return a random Suggested cluster record to spread writes across pillars."""
     records = _get(TABLE_CLUSTERS, {"filterByFormula": "{Status} = 'Suggested'"})
     if not records:
         return None
-    # Sort by created time (earliest first)
-    records.sort(key=lambda r: r.get("createdTime", ""))
-    return records[0]
+    return random.choice(records)
 
 
 def notify_discord(message):
@@ -62,6 +61,7 @@ def main():
         "--why", why,
         "--publish-days", "0,2,4",  # Mon/Wed/Fri only
         "--pillar", pillar,
+        "--cluster-id", record_id,
     ]
 
     try:

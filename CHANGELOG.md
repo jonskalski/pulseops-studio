@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-04-20 — New beginner pillars, cluster ID fix, Airtable fields, Discord log split
+
+### pillar_planner.py
+- Ran for 2 new pillars: "Local Marketing Systems for Small Businesses" (20 clusters) and "Email and Inbox Systems for SMB Owners" (20 clusters)
+
+### cluster_writer.py
+- Switched `get_next_cluster()` from oldest-first sort to `random.choice()` — spreads writes across all active pillars instead of draining one at a time
+- Now passes `--cluster-id` (Airtable record ID) to pipeline.py so publish tracking no longer relies on title matching
+
+### pipeline.py
+- Added `--cluster-id` CLI arg, threaded through `run_pipeline()` to `mark_cluster_published()`
+- Added `detect_schema_type()` and `count_words()` helpers (extracted from `generate_schema_markup`)
+- `mark_cluster_published()` call now passes 6 new fields: Published Title, Keyword, WP Slug, Meta Description, Schema Type, Word Count
+- Added `DISCORD_PIPELINE_LOG_URL` env var and `discord_log()` function — all step-level progress (Steps 1–6, polish attempts, LinkedIn) now routes to #pipeline-logs; #drafts only gets Started, Scheduled, Needs Review
+
+### airtable/client.py
+- `mark_cluster_published()` now accepts `cluster_id` for direct record update (bypasses title match), plus 6 new optional fields
+
+### backfill_cluster_fields.py (new)
+- Backfill script that matches published cluster records to runs/ JSON files and populates all 6 new fields; handles "In Queue" records via slug fuzzy-matching
+
+### .env
+- Added `DISCORD_PIPELINE_LOG_WEBHOOK_URL` for #pipeline-logs channel
+
 ## 2026-04-19 — Pipeline rejection audit + measurement fixes
 
 ### pipeline.py

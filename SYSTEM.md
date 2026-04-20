@@ -69,7 +69,8 @@ pillar_suggester.py ──► Discord #topics ──► discord_bot.py ──►
 | **Writes** | WordPress content includes JSON-LD schema markup (Article/HowTo/FAQPage auto-detected) |
 | **Writes** | Airtable Content Ideas: mark_published (Status: Published, WP Post ID, WP Post URL) |
 | **Writes** | `published_posts_index.json`: appends entry (title, url, slug, topic, date) after each publish |
-| **Writes** | Discord `DISCORD_WEBHOOK_URL`: step-by-step progress + cannibalization warnings |
+| **Writes** | Discord `DISCORD_DRAFTS_WEBHOOK_URL` (#drafts): key events only — Started, Scheduled, Needs Review, WP publish failed |
+| **Writes** | Discord `DISCORD_PIPELINE_LOG_WEBHOOK_URL` (#pipeline-logs): step-by-step progress (Steps 1–6, polish/approver attempts, LinkedIn generation) |
 | **Writes** | `runs/NEEDS_REVIEW.md` if all 3 attempts fail approval |
 | **Post-publish** | Runs 07_linkedin agent → logs to Airtable Social Posts → posts draft to Discord #linkedin |
 | **Pillar mode** | `--pillar` flag enables voice consistency: queries Airtable for published sibling clusters, reads their `05_polish.json` intros, injects as voice/terminology reference into Draft agent |
@@ -128,7 +129,8 @@ pillar_suggester.py ──► Discord #topics ──► discord_bot.py ──►
 |---|---|---|
 | **Content Ideas** | All blog post topics (hot, standalone, cluster) | Suggested → Approved → In Queue → Published / Rejected / Regenerate |
 | **Pillars** | Top-level content pillars | Suggested → Planning → Active → Ready → Published / Rejected |
-| **Clusters** | Individual posts under a pillar | Suggested → Approved → Published |
+| **Clusters** | Individual posts under a pillar | Suggested → In Queue → Published |
+| | Fields on publish: WP Post ID, WP Post URL, Published Date, Run ID, Published Title, Keyword, WP Slug, Meta Description, Schema Type, Word Count | |
 | **Social Posts** | Social variants after publish | Scheduled → Posted _(not yet built)_ |
 | **Rejected Posts** | Posts that failed all 3 approval attempts | Needs Review → Force Publish → Published (Forced) / Rewrite → Rewriting... → Published (Rewrite) |
 
@@ -140,7 +142,8 @@ pillar_suggester.py ──► Discord #topics ──► discord_bot.py ──►
 |---|---|---|
 | `#daily-topics` | `DISCORD_TOPICS_WEBHOOK_URL` | Topic suggestions (topic_picker.py) |
 | `#pillar-post-suggestions` | `DISCORD_PILLAR_WEBHOOK_URL` | Pillar suggestions + cluster maps (pillar_suggester.py, pillar_planner.py) |
-| `#drafts` | `DISCORD_DRAFTS_WEBHOOK_URL` | Pipeline publish notifications, Force Publish confirmations |
+| `#drafts` | `DISCORD_DRAFTS_WEBHOOK_URL` | Key pipeline events only: Started, Scheduled, Needs Review, WP publish failed |
+| `#pipeline-logs` | `DISCORD_PIPELINE_LOG_WEBHOOK_URL` | Step-by-step pipeline progress noise (Steps 1–6, polish/approver attempts) |
 | `#general` or main | `DISCORD_WEBHOOK_URL` | Errors, alerts, fallback |
 | `#linkedin` | `DISCORD_LINKEDIN_WEBHOOK_URL` | LinkedIn post drafts for manual approval + posting |
 | `#todo` | `DISCORD_TODO_WEBHOOK_URL` | Completed + pending TODO items (from /summarize) |
@@ -187,7 +190,7 @@ pillar_suggester.py ──► Discord #topics ──► discord_bot.py ──►
 5. pillar_planner.py generates 20+ cluster titles grouped by angle
 6. Pillar record created in Airtable (Planning) + 20 Cluster records (Suggested)
 7. Pillar brief posted to Discord
-8. cluster_writer.py runs Sat/Mon/Wed at 7am UTC — pulls next Suggested cluster, fires pipeline with --pillar and --publish-days 0,2,4 (Mon/Wed/Fri)
+8. cluster_writer.py runs Sat/Mon/Wed at 7am UTC — randomly picks a Suggested cluster across all active pillars, fires pipeline with --pillar, --cluster-id, and --publish-days 0,2,4 (Mon/Wed/Fri)
 8a. pipeline.py loads published sibling clusters from Airtable → reads their 05_polish.json → injects voice/terminology reference into Draft agent
 9. Post lands as WP draft, Discord notifies #drafts for review
 10. NOTE: cluster_writer.py needs rebuild for full batch mode (write all pillar clusters at once)

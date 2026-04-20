@@ -36,6 +36,11 @@
 - [ ] Set up Discord #linkedin channel + add DISCORD_LINKEDIN_WEBHOOK_URL to .env
 - [ ] Evaluate Buffer for automated LinkedIn queue (free tier, connect PulseOps page)
 - [x] Test rejected post + force publish workflow end-to-end | completed: 2026-04-12 | discord_sent: true
+- [x] Run pillar_planner.py for Local Marketing Systems + Email and Inbox Systems pillars (20 clusters each) | completed: 2026-04-20 | discord_sent: true
+- [x] Fix cluster_writer.py to randomly pick across all active pillars | completed: 2026-04-20 | discord_sent: true
+- [x] Fix Airtable cluster publish tracking — pass record ID instead of title matching | completed: 2026-04-20 | discord_sent: true
+- [x] Add 6 new fields to Clusters table (Published Title, Keyword, WP Slug, Meta Description, Schema Type, Word Count) + backfill | completed: 2026-04-20 | discord_sent: true
+- [x] Split pipeline Discord logging — #pipeline-logs for step noise, #drafts for key events only | completed: 2026-04-20 | discord_sent: true
 - [ ] Rebuild cluster_writer.py for full pillar batch mode (write all clusters at once, schedule in sequence)
 - [ ] Install gh CLI + authenticate with GitHub PAT
 - [ ] Install bat (syntax-highlighted terminal file viewer)
