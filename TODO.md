@@ -1,6 +1,10 @@
 # TODO
 
 ## Pending
+- [ ] Build pillar hub pages — one long-form "Complete Guide to X" page per active pillar (CRMs, Local Marketing, Email); each cluster links back to it, hub links out to all clusters; needed before interlinking is meaningful
+- [ ] Build retroactive sibling linker — script that pulls all Published clusters per pillar, updates each WP post via REST API to add 1-2 links to sibling clusters; run once a pillar hits 5+ published posts
+- [ ] Reconsider random cluster picking — writing randomly across 3 pillars means each pillar builds density slowly; consider writing 3-5 clusters per pillar in sequence so siblings exist to link to before moving on; weigh against content variety tradeoff
+- [ ] Wire sibling-aware linking into Draft agent — when --pillar is set, pass published sibling cluster URLs (not just titles) into the linking context so Draft can reference them; currently Draft only sees all published posts with no pillar weighting
 - [ ] Investigate April 12 batch failure — 7 of 11 rejected posts are from the same day; check what triggered that many runs and whether an agent change or batch queue caused the cluster
 - [ ] Build rewrite trigger for "Needs Review" backlog — 7 posts sitting in Airtable with fixable issues and no automated path to rewrite; needs a rewrite_rejected.py or similar that pulls Needs Review records, reruns pipeline with rejection reason injected as context
 - [ ] Monitor retry loop recovery rate — all 11 rejected posts failed all 3 attempts (0% recovery); with measurement fixes in place, track whether retry loop starts rescuing posts or if the escalation logic needs rethinking
