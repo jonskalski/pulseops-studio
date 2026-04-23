@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-04-23 — Pipeline retry logic, --resume flag, run_meta.json, TODO updates
+
+### pipeline.py
+- Added `import time` for retry sleeps
+- `call_claude()` now retries up to 3x on ReadTimeout (45s/90s backoff) and 529/503/502 (30s/60s/120s backoff) — previously a single timeout silently killed the run
+- New `resume_pipeline()` function resumes any incomplete or NEEDS_REVIEW run from its last completed step; injects prior approver feedback for NEEDS_REVIEW runs
+- New `--resume RUN_DIR` CLI flag; `topic` arg is now optional when `--resume` is used
+- New runs save `run_meta.json` (topic, why, pillar, cluster_id, allowed_days) so context survives a crash
+- Added `run_meta.json` write at pipeline start
+
+### TODO.md
+- Added: Build pipeline job queue (pipeline_queue.jsonl + queue_worker.py)
+- Restored: Rebuild cluster_writer.py for full pillar batch mode (updated description to reference queue)
+
 ## 2026-04-20 — New beginner pillars, cluster ID fix, Airtable fields, Discord log split
 
 ### pillar_planner.py

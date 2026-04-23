@@ -10,6 +10,7 @@ import json
 import re
 import argparse
 import subprocess
+import time
 import requests
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -259,9 +260,30 @@ def call_claude(system_prompt, user_message, model=SONNET):
         "system": system_prompt,
         "messages": [{"role": "user", "content": user_message}],
     }
-    r = requests.post("https://api.anthropic.com/v1/messages", headers=headers, json=payload, timeout=120)
-    r.raise_for_status()
-    return r.json()["content"][0]["text"]
+    last_exc = None
+    for attempt in range(3):
+        try:
+            r = requests.post("https://api.anthropic.com/v1/messages", headers=headers, json=payload, timeout=120)
+            if r.status_code in (529, 503, 502):
+                wait = 30 * (2 ** attempt)
+                print(f"  API overloaded {r.status_code} (attempt {attempt+1}/3), retrying in {wait}s...")
+                time.sleep(wait)
+                continue
+            r.raise_for_status()
+            return r.json()["content"][0]["text"]
+        except requests.exceptions.ReadTimeout as e:
+            last_exc = e
+            if attempt < 2:
+                wait = 45 * (2 ** attempt)
+                print(f"  API timeout (attempt {attempt+1}/3), retrying in {wait}s...")
+                time.sleep(wait)
+        except requests.exceptions.ConnectionError as e:
+            last_exc = e
+            if attempt < 2:
+                wait = 15 * (2 ** attempt)
+                print(f"  API connection error (attempt {attempt+1}/3), retrying in {wait}s...")
+                time.sleep(wait)
+    raise last_exc or Exception("API failed after 3 attempts")
 
 def extract_json(text):
     """Extract JSON from Claude response, handling markdown code blocks."""
@@ -483,6 +505,153 @@ def publish_to_wordpress(post_data, keyword=None, allowed_days=None):
 
     return post
 
+# ── Resume Pipeline ──────────────────────────────────────────────────────────
+
+def resume_pipeline(run_dir_path):
+    """Resume an incomplete or NEEDS_REVIEW run from its last completed step."""
+    run_dir = Path(run_dir_path)
+    if not run_dir.exists():
+        print(f"ERROR: run directory not found: {run_dir}")
+        sys.exit(1)
+
+    meta_file = run_dir / "run_meta.json"
+    meta = json.loads(meta_file.read_text()) if meta_file.exists() else {}
+    topic       = meta.get("topic", run_dir.name.split("_", 2)[-1].replace("-", " "))
+    why         = meta.get("why")
+    pillar      = meta.get("pillar")
+    cluster_id  = meta.get("cluster_id")
+    allowed_days = meta.get("allowed_days")
+
+    def load_json(name):
+        f = run_dir / f"{name}.json"
+        return json.loads(f.read_text()) if f.exists() else None
+
+    outline  = load_json("01_outline")
+    research = load_json("02_research")
+    edited   = load_json("04_edit")
+
+    needs_review_file = run_dir / "NEEDS_REVIEW.md"
+    initial_feedback = None
+    if needs_review_file.exists():
+        raw = needs_review_file.read_text()
+        initial_feedback = raw.replace("# Needs Manual Review\n\nApprover feedback (all 3 attempts failed):\n", "").strip()
+        needs_review_file.unlink()
+        print(f"  Resuming NEEDS_REVIEW run with prior feedback injected")
+    else:
+        print(f"  Resuming incomplete run from 04_edit")
+
+    if edited is None:
+        print("ERROR: 04_edit.json not found — cannot resume from this point")
+        sys.exit(1)
+
+    print(f"\n🔄 Resuming pipeline: {run_dir.name}")
+    print(f"   Topic: {topic}\n")
+    discord(f"🔄 **Pipeline Resumed**\n**Topic:** {topic}\n**Run:** {run_dir.name}")
+
+    linking_note = ""
+    why_note = f"\n\nTopic context: {why}" if why else ""
+
+    # ── Polish + Approve (3-attempt loop, same as run_pipeline) ─────────────
+    approved = False
+    polished = None
+    last_comments = initial_feedback or ""
+
+    def polish_and_approve(post_input, attempt_label, approver_feedback=None):
+        discord_log(f"⏳ Polish — {attempt_label}...")
+        polish_input = f"Post:\n{json.dumps(post_input, indent=2)}"
+        if approver_feedback:
+            polish_input += f"\n\nApprover feedback from previous attempt (fix these issues):\n{approver_feedback}"
+        p = run_agent("05_polish", polish_input, run_dir)
+        polish_notes = p.get('polish_notes', []) if isinstance(p, dict) else []
+        notes_preview = "\n".join(f"  - {n}" for n in polish_notes) if polish_notes else "  (no notes)"
+        discord_log(f"✅ Polish complete — {attempt_label}\n{notes_preview}")
+        p = validate_and_repolish(p, attempt_label, run_dir, approver_feedback=approver_feedback)
+        if isinstance(p, dict):
+            words    = count_post_words(p.get("content", ""))
+            meta_len = len(p.get("meta_description", ""))
+            discord_log(f"📏 Measurements — words: {words}, meta: {meta_len} chars")
+        discord_log(f"🔍 Approver reviewing — {attempt_label}...")
+        a = run_agent("06_approver", f"Post:\n{json.dumps(p, indent=2)}", run_dir)
+        return p, a
+
+    polished, approval = polish_and_approve(edited, "attempt 1/3", approver_feedback=last_comments if last_comments else None)
+    if isinstance(approval, dict) and approval.get("decision") == "APPROVED":
+        discord_log(f"✅ **APPROVED** on attempt 1")
+        approved = True
+    else:
+        last_comments = approval.get("comments", "No specific feedback") if isinstance(approval, dict) else str(approval)
+        scores = approval.get("scores", {}) if isinstance(approval, dict) else {}
+        failed = [k for k, v in scores.items() if v == "fail"]
+        discord_log(f"❌ **DENIED** (attempt 1) — Failed: {', '.join(failed) or 'unknown'}")
+
+    if not approved:
+        polished, approval = polish_and_approve(polished, "attempt 2/3", approver_feedback=last_comments)
+        if isinstance(approval, dict) and approval.get("decision") == "APPROVED":
+            discord_log(f"✅ **APPROVED** on attempt 2")
+            approved = True
+        else:
+            last_comments = approval.get("comments", "No specific feedback") if isinstance(approval, dict) else str(approval)
+            scores = approval.get("scores", {}) if isinstance(approval, dict) else {}
+            failed = [k for k, v in scores.items() if v == "fail"]
+            discord_log(f"❌ **DENIED** (attempt 2) — Failed: {', '.join(failed) or 'unknown'}")
+
+    if not approved and outline and research:
+        discord_log(f"🔄 Rerunning Draft with approver feedback (attempt 3/3)...")
+        draft_retry_input = (
+            f"Outline:\n{json.dumps(outline, indent=2)}\n\n"
+            f"Research:\n{json.dumps(research, indent=2)}\n\n"
+            f"Approver feedback from previous attempt (fix these issues):\n{last_comments}"
+        )
+        if why:
+            draft_retry_input += f"\n\nTopic context: {why}"
+        redraft = run_agent("03_draft", draft_retry_input, run_dir)
+        discord_log(f"✅ Draft rerun complete")
+        polished, approval = polish_and_approve(redraft, "attempt 3/3", approver_feedback=last_comments)
+        if isinstance(approval, dict) and approval.get("decision") == "APPROVED":
+            discord_log(f"✅ **APPROVED** on attempt 3")
+            approved = True
+        else:
+            last_comments = approval.get("comments", "No specific feedback") if isinstance(approval, dict) else str(approval)
+            scores = approval.get("scores", {}) if isinstance(approval, dict) else {}
+            failed = [k for k, v in scores.items() if v == "fail"]
+            discord(f"❌ **NEEDS REVIEW** (all 3 attempts failed)\nFailed: {', '.join(failed) or 'unknown'}\n{last_comments}")
+            (run_dir / "NEEDS_REVIEW.md").write_text(f"# Needs Manual Review\n\nApprover feedback (all 3 attempts failed):\n{last_comments}\n")
+
+    if not approved:
+        print(f"\n⚠️  Post still needs manual review: {run_dir}")
+        return
+
+    # ── Publish ──────────────────────────────────────────────────────────────
+    discord_log(f"📤 Scheduling to WordPress...")
+    try:
+        keyword = outline.get("target_keyword", "") if isinstance(outline, dict) else ""
+        result = publish_to_wordpress(polished, keyword=keyword, allowed_days=allowed_days)
+        post_url = result.get("link", "unknown")
+        post_id  = result.get("id", "")
+        pub_date = result.get("date", "")
+        discord(f"🎉 **Scheduled!**\n**URL:** {post_url}\n**Title:** {polished.get('title')}\n**Publishes:** {pub_date[:10]}")
+        print(f"\n✅ Scheduled: {post_url}")
+        (run_dir / "published.json").write_text(json.dumps(result, indent=2))
+        update_posts_index(polished.get("title", topic), post_url, polished.get("slug", ""), keyword)
+        try:
+            from airtable.client import mark_published, mark_cluster_published
+            mark_published(topic, post_id, post_url)
+            if pillar:
+                mark_cluster_published(
+                    polished.get("title", topic), post_id, post_url,
+                    run_id=run_dir.name, cluster_id=cluster_id,
+                    published_title=polished.get("title", ""),
+                    keyword=keyword, wp_slug=polished.get("slug", ""),
+                    meta_description=polished.get("meta_description", ""),
+                    schema_type=detect_schema_type(polished),
+                    word_count=count_words(polished.get("content", "")),
+                )
+        except Exception as ae:
+            print(f"  Airtable update failed: {ae}")
+    except Exception as e:
+        discord(f"❌ **WordPress publish failed:** {str(e)}")
+        print(f"\n❌ Publish failed: {e}")
+
 # ── Main Pipeline ────────────────────────────────────────────────────────────
 
 def run_pipeline(topic, why=None, allowed_days=None, pillar=None, cluster_id=None):
@@ -503,6 +672,13 @@ def run_pipeline(topic, why=None, allowed_days=None, pillar=None, cluster_id=Non
     print(f"   Run:   {run_dir.name}\n")
 
     discord(f"🚀 **Studio Pipeline Started**\n**Topic:** {topic}\n**Run:** {run_dir.name}")
+
+    # Save metadata so --resume can recover context
+    (run_dir / "run_meta.json").write_text(json.dumps({
+        "topic": topic, "why": why, "pillar": pillar,
+        "cluster_id": cluster_id,
+        "allowed_days": allowed_days,
+    }, indent=2))
 
     # ── Keyword cannibalization check ─────────────────────────────────────
     existing_index = load_posts_index()
@@ -765,12 +941,19 @@ def run_pipeline(topic, why=None, allowed_days=None, pillar=None, cluster_id=Non
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("topic", nargs="+", help="Topic to write about")
+    parser.add_argument("topic", nargs="*", help="Topic to write about (omit when using --resume)")
     parser.add_argument("--why", default=None, help="Context: why this topic is timely and the SMB angle")
     parser.add_argument("--publish-days", default=None, help="Comma-separated weekday ints to restrict scheduling (e.g. '1,3' for Tue/Thu)")
     parser.add_argument("--pillar", default=None, help="Parent pillar name — enables voice consistency context from sibling posts")
     parser.add_argument("--cluster-id", default=None, help="Airtable cluster record ID for reliable publish tracking")
+    parser.add_argument("--resume", default=None, metavar="RUN_DIR", help="Resume an incomplete or NEEDS_REVIEW run from its last completed step")
     args = parser.parse_args()
-    topic = " ".join(args.topic)
-    allowed_days = [int(d) for d in args.publish_days.split(",")] if args.publish_days else None
-    run_pipeline(topic, why=args.why, allowed_days=allowed_days, pillar=args.pillar, cluster_id=args.cluster_id)
+
+    if args.resume:
+        resume_pipeline(args.resume)
+    else:
+        if not args.topic:
+            parser.error("topic is required unless --resume is used")
+        topic = " ".join(args.topic)
+        allowed_days = [int(d) for d in args.publish_days.split(",")] if args.publish_days else None
+        run_pipeline(topic, why=args.why, allowed_days=allowed_days, pillar=args.pillar, cluster_id=args.cluster_id)

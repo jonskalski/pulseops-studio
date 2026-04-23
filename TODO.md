@@ -6,7 +6,8 @@
 - [ ] Reconsider random cluster picking — writing randomly across 3 pillars means each pillar builds density slowly; consider writing 3-5 clusters per pillar in sequence so siblings exist to link to before moving on; weigh against content variety tradeoff
 - [ ] Wire sibling-aware linking into Draft agent — when --pillar is set, pass published sibling cluster URLs (not just titles) into the linking context so Draft can reference them; currently Draft only sees all published posts with no pillar weighting
 - [ ] Investigate April 12 batch failure — 7 of 11 rejected posts are from the same day; check what triggered that many runs and whether an agent change or batch queue caused the cluster
-- [ ] Build rewrite trigger for "Needs Review" backlog — 7 posts sitting in Airtable with fixable issues and no automated path to rewrite; needs a rewrite_rejected.py or similar that pulls Needs Review records, reruns pipeline with rejection reason injected as context
+- [x] Build rewrite trigger for "Needs Review" backlog — implemented as --resume flag in pipeline.py; reads NEEDS_REVIEW.md feedback, injects into polish attempt 1, reruns approval loop | completed: 2026-04-23 | discord_sent: true
+- [x] Fix force_publish.py rewrite_run() missing validate_and_repolish() — partially addressed; core fix is the --resume path which uses validate_and_repolish correctly | completed: 2026-04-23 | discord_sent: true
 - [ ] Monitor retry loop recovery rate — all 11 rejected posts failed all 3 attempts (0% recovery); with measurement fixes in place, track whether retry loop starts rescuing posts or if the escalation logic needs rethinking
 - [x] Fix Approver self-contradiction — Approver was reasoning out loud in comments, walking back pass/fail verdicts mid-response; updated 06_approver.md to finalize verdicts before writing output | completed: 2026-04-19 | discord_sent: false
 - [ ] Fix Draft agent word count bias — "when in doubt, write longer / a section that could be 150 words should be 200" is directly causing over-2000 word posts; change Draft target to 1,600-1,800 to leave Polish headroom below the 2,000 ceiling
@@ -17,6 +18,7 @@
 - [ ] Fix force_publish.py rewrite_run() missing validate_and_repolish() — force_publish.py has its own copy of polish_and_approve() that predates the measurement fix; rewritten posts still fail word count/meta desc for the same reasons as the originals
 - [ ] Fix force_publish.py publish_run() sends raw 05_polish.json to WordPress with no validation — force-published posts bypass all word count and meta desc checks; whatever the failed Polish produced goes live unmodified
 - [ ] Fix rewrite_run() Polish attempt 1 missing rejection feedback — line 148 passes approver_feedback=None on attempt 1; rejection reason goes to Draft but not Polish; Polish has no idea what to fix and may reproduce the same issues; rejection feedback should be passed to Polish on all attempts
+- [ ] Re-run stop-boosting-facebook-posts pipeline — resume died after 3 API timeouts during parallel recovery; run solo once API clears
 - [ ] Remove stale hardcoded internal links from 01_outline.md — 12 Excel posts listed, 7 moved to draft in March; Outline's internal_links JSON gets passed to Draft agent which could link to unpublished posts; hardcoded list is redundant since Draft already gets dynamic WP post list from pipeline
 - [ ] Address Research agent stat hallucination — agent is asked for "real, specific numbers" but has no web access; hallucinated stats pass EEAT check and get published; options: (a) strip the stats field and only ask for "what stat would help and where to find it", or (b) add a verification note in the Draft agent to flag any cited stat as unverified
 - [ ] Rethink attempt 3 escalation — currently reruns Draft from scratch, throwing away 2 rounds of polished work; most rejections are now caught by the measurement gate; attempt 3 should re-polish attempt 2's output with feedback instead of regenerating from the outline
@@ -45,7 +47,8 @@
 - [x] Fix Airtable cluster publish tracking — pass record ID instead of title matching | completed: 2026-04-20 | discord_sent: true
 - [x] Add 6 new fields to Clusters table (Published Title, Keyword, WP Slug, Meta Description, Schema Type, Word Count) + backfill | completed: 2026-04-20 | discord_sent: true
 - [x] Split pipeline Discord logging — #pipeline-logs for step noise, #drafts for key events only | completed: 2026-04-20 | discord_sent: true
-- [ ] Rebuild cluster_writer.py for full pillar batch mode (write all clusters at once, schedule in sequence)
+- [ ] Build pipeline job queue — pipeline_queue.jsonl + queue_worker.py (cron every 5 min, one job at a time via lock file); cluster_writer.py enqueues instead of running directly; supports both new posts and --resume jobs; eliminates parallel API rate limiting
+- [ ] Rebuild cluster_writer.py for full pillar batch mode (write all clusters at once, enqueue in sequence)
 - [ ] Install gh CLI + authenticate with GitHub PAT
 - [ ] Install bat (syntax-highlighted terminal file viewer)
 - [x] Install jq (JSON debugging in terminal) | completed: unknown | discord_sent: true
