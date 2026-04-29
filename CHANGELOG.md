@@ -409,3 +409,20 @@ Removed the threaded scenario system from all agents. Second-person is now the o
 
 ### pipeline.py
 - Bumped note truncation from 100 to 200 chars (Polish and Edit notes)
+
+## 2026-04-29 — Voice overhaul: deadpan/sardonic/dark as baseline register
+
+### agents/03_draft.md
+- Rewrote voice ceiling: changed from "knowledgeable, dry, occasionally sarcastic" to "deadpan, sarcastic, occasionally dark"
+- Changed snark rule from "1-2 moments max" to sarcasm-as-baseline with ceiling on escalation/stacking only
+- Updated target examples: added Kevin, CRM setup, pipeline failure, software demo examples
+- Updated voice rules: "deadpan, sardonic, occasionally dark" replaces "dry, sardonic, a little tired"
+
+### agents/05_polish.md
+- Mirrored all voice ceiling changes from 03_draft.md
+- Updated "The Voice" section to make sarcasm the baseline register, not occasional
+- Rewrote task description: "deadpan and dark beats warm and restrained"
+
+### agents/07_linkedin.md
+- Updated voice section to match new register: deadpan, sardonic, occasionally dark
+- Added Kevin example to pass/fail section
