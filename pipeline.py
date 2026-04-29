@@ -57,6 +57,19 @@ AGENT_MODELS = {
     "06_approver": SONNET,
 }
 
+# Per-agent max_tokens; agents not listed fall back to 4096.
+# Polish/draft produce full post HTML so they need more headroom;
+# outline/research/approver are short structured outputs.
+AGENT_MAX_TOKENS = {
+    "01_outline": 2048,
+    "02_research": 2048,
+    "03_draft": 6000,
+    "04_edit": 6000,
+    "05_polish": 6000,
+    "06_approver": 1024,
+    "07_linkedin": 1024,
+}
+
 # ── Posts Index ─────────────────────────────────────────────────────────────
 
 def get_pillar_voice_context(pillar_name, runs_dir=None):
@@ -248,7 +261,7 @@ def discord_log(msg):
     if url:
         _post_webhook(url, msg)
 
-def call_claude(system_prompt, user_message, model=SONNET):
+def call_claude(system_prompt, user_message, model=SONNET, max_tokens=4096):
     headers = {
         "x-api-key": ANTHROPIC_API_KEY,
         "anthropic-version": "2023-06-01",
@@ -256,14 +269,14 @@ def call_claude(system_prompt, user_message, model=SONNET):
     }
     payload = {
         "model": model,
-        "max_tokens": 8192,
+        "max_tokens": max_tokens,
         "system": system_prompt,
         "messages": [{"role": "user", "content": user_message}],
     }
     last_exc = None
     for attempt in range(3):
         try:
-            r = requests.post("https://api.anthropic.com/v1/messages", headers=headers, json=payload, timeout=120)
+            r = requests.post("https://api.anthropic.com/v1/messages", headers=headers, json=payload, timeout=300)
             if r.status_code in (529, 503, 502):
                 wait = 30 * (2 ** attempt)
                 print(f"  API overloaded {r.status_code} (attempt {attempt+1}/3), retrying in {wait}s...")
@@ -373,9 +386,10 @@ def run_agent(name, user_message, run_dir):
     prompt_file = AGENTS_DIR / f"{name}.md"
     system_prompt = prompt_file.read_text()
     model = AGENT_MODELS.get(name, SONNET)
+    max_tokens = AGENT_MAX_TOKENS.get(name, 4096)
 
-    print(f"  Running {name} [{model}]...")
-    result_text = call_claude(system_prompt, user_message, model)
+    print(f"  Running {name} [{model}] (max_tokens={max_tokens})...")
+    result_text = call_claude(system_prompt, user_message, model, max_tokens=max_tokens)
 
     # Save raw output
     (run_dir / f"{name}_raw.txt").write_text(result_text)

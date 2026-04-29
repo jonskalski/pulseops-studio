@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-04-29 — Pipeline timeout fix, LinkedIn wiring, log_social_post fix, 07_linkedin.md rewrite
+
+### pipeline.py
+- Bumped API HTTP timeout from 120s to 300s to handle long polish step responses
+- Added `AGENT_MAX_TOKENS` dict for per-agent token limits; polish/draft cap at 6000, approver/LinkedIn at 1024 (was flat 8192 for all)
+- `call_claude()` now accepts `max_tokens` parameter; `run_agent()` looks up per-agent limit
+
+### airtable/client.py
+- Fixed `log_social_post()` field names — had never worked; corrected Topic→Name, Post Copy→Copy, WP Post URL→Link, removed invalid Status value "Pending Review" (now "Scheduled")
+
+### agents/07_linkedin.md
+- Full rewrite: added fold mechanic (first line ≤10 words, standalone claim), removed staircase format requirement, added anti-AI-tell guidance (banned constructions, uneven rhythm, rhetorical asides, specific over general), updated word count to 150-250, banned hashtags
+
 ## 2026-04-23 — Pipeline retry logic, --resume flag, run_meta.json, TODO updates
 
 ### pipeline.py

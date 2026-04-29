@@ -40,8 +40,9 @@
 - [ ] Set up rclone + Google Drive sync + cron (low priority — disaster recovery only)
 - [ ] Set up Google Search Console stats in morning briefing
 - [x] Wire social posting — LinkedIn agent built, pipeline wired, Airtable logging done | completed: 2026-04-12 | discord_sent: true
-- [ ] Set up Discord #linkedin channel + add DISCORD_LINKEDIN_WEBHOOK_URL to .env
-- [ ] Evaluate Buffer for automated LinkedIn queue (free tier, connect PulseOps page)
+- [x] Set up Discord #linkedin channel + add DISCORD_LINKEDIN_WEBHOOK_URL to .env | completed: 2026-04-29 | discord_sent: true
+- [ ] Evaluate Buffer for automated LinkedIn queue (free tier, connect PulseOps page) | POPS-11
+- [ ] Add AI-tell banned phrases to Polish agent (05_polish.md) — "Here's the thing:", "The reality is:", rule-of-three lists, overly balanced paragraphs | POPS-12
 - [x] Test rejected post + force publish workflow end-to-end | completed: 2026-04-12 | discord_sent: true
 - [x] Run pillar_planner.py for Local Marketing Systems + Email and Inbox Systems pillars (20 clusters each) | completed: 2026-04-20 | discord_sent: true
 - [x] Fix cluster_writer.py to randomly pick across all active pillars | completed: 2026-04-20 | discord_sent: true

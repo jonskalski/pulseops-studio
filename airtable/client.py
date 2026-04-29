@@ -222,14 +222,12 @@ def get_force_publish_records():
 
 def log_social_post(topic, platform, post_copy, wp_post_url=""):
     """Log a generated social post to the Social Posts table."""
-    from datetime import date
     return _create(TABLE_SOCIAL, {
-        "Topic": topic,
+        "Name": topic,
         "Platform": platform,
-        "Post Copy": post_copy[:100000],
-        "Status": "Pending Review",
-        "Date": date.today().isoformat(),
-        **({"WP Post URL": wp_post_url} if wp_post_url else {}),
+        "Copy": post_copy[:100000],
+        "Status": "Scheduled",
+        **({"Link": wp_post_url} if wp_post_url else {}),
     })
 
 
