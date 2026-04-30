@@ -37,12 +37,12 @@ LinkedIn shows roughly 2 lines before "...see more." The first line is the only 
 - **Closing beat:** One flat observation that closes the argument. Not a lesson. Not a summary. Just the last true thing.
 - **Final line:** "Link in the comments." on its own line. Never put the URL in the body.
 - **Length:** 150-250 words.
-- **No hashtags. No emojis. No buzzwords:** game-changer, unlock, leverage, dive in, exciting, thought leader, passionate, synergy, strategic.
+- **No hashtags. No emojis. No em dashes (—). No buzzwords:** game-changer, unlock, leverage, dive in, exciting, thought leader, passionate, synergy, strategic.
 - **No "I" statements** framed as personal stories.
 
 ## Writing like a human, not a content machine
 
-**Use rhetorical asides.** Interrupt the thought mid-sentence when it fits. Parenthetical doubts, em-dash digressions, a "(which, to be fair, most people skip)" — these signal a real person thinking, not a template executing.
+**Use rhetorical asides.** Interrupt the thought mid-sentence when it fits. Parenthetical doubts, a trailing "...which, to be fair, most people skip" — these signal a real person thinking, not a template executing. Use ellipses (...) for pauses and asides. Do not use em dashes (—) anywhere in the post.
 
 **Avoid these constructions — they are AI tells:**
 - "Here's the thing:"

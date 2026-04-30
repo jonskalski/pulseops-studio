@@ -64,7 +64,7 @@ pillar_suggester.py ──► Discord #topics ──► discord_bot.py ──►
 | **Reads** | All 6 agent prompt files in `agents/` |
 | **Reads** | `published_posts_index.json` (local topic-aware index for internal linking) |
 | **Reads** | WordPress published posts (supplemental, fills gaps not in local index) |
-| **Reads** | Pexels API (featured image) |
+| **Reads** | OpenAI gpt-image-2 API (blog header image + Instagram image) |
 | **Writes** | WordPress: creates post as `future` status, scheduled to next open 9am EST slot on allowed days |
 | **Writes** | WordPress content includes JSON-LD schema markup (Article/HowTo/FAQPage auto-detected) |
 | **Writes** | Airtable Content Ideas: mark_published (Status: Published, WP Post ID, WP Post URL) |
@@ -72,7 +72,7 @@ pillar_suggester.py ──► Discord #topics ──► discord_bot.py ──►
 | **Writes** | Discord `DISCORD_DRAFTS_WEBHOOK_URL` (#drafts): key events only — Started, Scheduled, Needs Review, WP publish failed |
 | **Writes** | Discord `DISCORD_PIPELINE_LOG_WEBHOOK_URL` (#pipeline-logs): step-by-step progress (Steps 1–6, polish/approver attempts, LinkedIn generation) |
 | **Writes** | `runs/NEEDS_REVIEW.md` if all 3 attempts fail approval |
-| **Post-publish** | Runs 07_linkedin agent → logs to Airtable Social Posts → posts draft to Discord #linkedin |
+| **Post-publish** | Runs 07_linkedin → 10_personal_linkedin → 08_instagram (caption) → 09_bluesky agents → logs all to Airtable Social Posts (Platform field is plain text) → posts to Discord Socially Bot; also generates Instagram image (1024×1024 with text) via gpt-image-2 → posts as file to Discord |
 | **Pillar mode** | `--pillar` flag enables voice consistency: queries Airtable for published sibling clusters, reads their `05_polish.json` intros, injects as voice/terminology reference into Draft agent |
 | **Why** | Core content engine — turns a topic into a published WordPress post |
 
@@ -211,9 +211,13 @@ pillar_suggester.py ──► Discord #topics ──► discord_bot.py ──►
 │   ├── 01_outline.md        # Outline agent prompt
 │   ├── 02_research.md       # Research agent prompt
 │   ├── 03_draft.md          # Draft agent prompt
-│   ├── 04_edit.md           # Edit agent prompt
+│   ├── 04_edit.md           # Edit agent prompt (voice protection rules added)
 │   ├── 05_polish.md         # Polish agent prompt
-│   └── 06_approver.md       # Approver agent prompt
+│   ├── 06_approver.md       # Approver agent prompt
+│   ├── 07_linkedin.md       # Brand LinkedIn post (deadpan/sardonic)
+│   ├── 08_instagram.md      # Instagram caption (3 paragraphs, link in bio)
+│   ├── 09_bluesky.md        # Bluesky post (unhinged, 300 char, direct URL)
+│   └── 10_personal_linkedin.md  # Personal LinkedIn (Mike/Dave voice, link in comments)
 ├── airtable/
 │   └── client.py            # Shared Airtable client
 ├── published_posts_index.json  # Local index: title/url/slug/topic per published post
@@ -243,7 +247,8 @@ pillar_suggester.py ──► Discord #topics ──► discord_bot.py ──►
 | `WP_URL` | pipeline.py | WordPress site URL |
 | `WP_USER` | pipeline.py | WordPress username |
 | `WP_APP_PASSWORD` | pipeline.py | WordPress Application Password |
-| `PEXELS_API_KEY` | pipeline.py | Featured image fetching |
+| `PEXELS_API_KEY` | pipeline.py | Featured image fetching (superseded by gpt-image-2, kept for fallback reference) |
+| `OPENAI_API_KEY` | pipeline.py | gpt-image-2 blog header + Instagram image generation |
 | `DISCORD_BOT_TOKEN` | discord_bot.py | Bot authentication |
 | `DISCORD_WEBHOOK_URL` | pipeline.py, pillar_planner.py, pillar_suggester.py | General Discord channel |
 | `DISCORD_TOPICS_WEBHOOK_URL` | topic_picker.py | Topics channel |

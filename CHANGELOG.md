@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-04-30 — Personal LinkedIn agent, voice calibration, image fix, Airtable platform field fix
+
+### agents/10_personal_linkedin.md
+- New agent: personal LinkedIn posts — unhinged Mike/Dave voice, opens with specific number/detail, names a real-feeling person, closes with "Different issue. Different fix." + "Link in the comments."
+- No em dashes, no hashtags, no emojis, no offer to fix it
+
+### agents/07_linkedin.md
+- Banned em dashes; switched rhetorical aside mechanic to ellipses (...)
+
+### agents/04_edit.md
+- Added Voice Protection Rules: do not cut short declarative setups before payoff lines; do not cut specific behavioral details, time references, or sardonic asides
+
+### pipeline.py
+- Added `"10_personal_linkedin": 1024` to AGENT_MAX_TOKENS
+- Added personal LinkedIn generation block after brand LinkedIn — posts to Discord labeled "Personal LinkedIn Draft:", logs to Airtable as "Personal LinkedIn"
+- Removed unsupported `response_format="b64_json"` param from both gpt-image-2 calls (was causing silent 400 failures on all image generation)
+
+### airtable — Social Posts table
+- Changed Platform field from single-select to plain text (old options: LinkedIn/Twitter/Facebook only — Instagram, Bluesky, Personal LinkedIn were failing silently)
+- Backfilled all 4 social posts for delegation post (1467) to Airtable
+
 ## 2026-04-30 — gpt-image-2 integration, Instagram + Bluesky agents, OpenAI key
 
 ### pipeline.py

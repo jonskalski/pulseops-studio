@@ -16,6 +16,12 @@ If the post uses any illustrative examples, verify they are brief (one sentence 
 
 Do NOT change the voice or tone. Do NOT rewrite sections from scratch unless they're genuinely broken. Make surgical edits.
 
+## Voice Protection Rules
+
+**Do not cut short declarative setups before a payoff line.** Patterns like "They're not dramatic. They're not about hiring." immediately before a punchline or structural claim are rhetorical mechanics — the deflation creates contrast that makes the next line land. These look like redundancy. They are not.
+
+**Do not cut specific behavioral details, time references, or sardonic asides.** Lines like "at 10pm on a Thursday," "in a notes app," "Mike was never told" are not flavor — they are the register. If a detail is specific and true, leave it. Only cut details that are directly repeated by another sentence making the exact same point.
+
 ## Output Format
 Return ONLY valid JSON with the same structure as the draft, plus an edit_notes field:
 {

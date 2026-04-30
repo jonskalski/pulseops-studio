@@ -71,6 +71,7 @@ AGENT_MAX_TOKENS = {
     "07_linkedin": 1024,
     "08_instagram": 512,
     "09_bluesky": 256,
+    "10_personal_linkedin": 1024,
 }
 
 # ── Posts Index ─────────────────────────────────────────────────────────────
@@ -425,7 +426,6 @@ def generate_blog_image(title, topic):
             prompt=prompt,
             size="1536x1024",
             quality="medium",
-            response_format="b64_json",
         )
         return base64.b64decode(response.data[0].b64_json)
     except Exception as e:
@@ -452,7 +452,6 @@ def generate_instagram_image(title, topic):
             prompt=prompt,
             size="1024x1024",
             quality="medium",
-            response_format="b64_json",
         )
         return base64.b64decode(response.data[0].b64_json)
     except Exception as e:
@@ -983,6 +982,44 @@ def run_pipeline(topic, why=None, allowed_days=None, pillar=None, cluster_id=Non
         except Exception as le:
             discord_log(f"⚠️ LinkedIn generation failed: {le}")
             print(f"  LinkedIn generation failed: {le}")
+
+        # ── Personal LinkedIn post ─────────────────────────────────────────
+        try:
+            discord_log(f"✍️ Generating Personal LinkedIn post...")
+            import re as _re2
+            plain_content_pl = _re2.sub(r'<[^>]+>', '', polished.get("content", "")).strip()
+            pl_input = (
+                f"Title: {polished.get('title', topic)}\n"
+                f"Meta description: {polished.get('meta_description', '')}\n"
+                f"Post excerpt:\n{plain_content_pl[:1500]}"
+            )
+            pl_result = run_agent("10_personal_linkedin", pl_input, run_dir)
+            pl_post = pl_result.get("post", "") if isinstance(pl_result, dict) else str(pl_result)
+
+            if pl_post:
+                try:
+                    from airtable.client import log_social_post
+                    log_social_post(polished.get("title", topic), "Personal LinkedIn", pl_post, wp_post_url=post_url)
+                except Exception:
+                    pass
+
+                if DISCORD_LINKEDIN_WEBHOOK_URL:
+                    preview = pl_post.replace("\\n", "\n")
+                    msg = (
+                        f"**Personal LinkedIn Draft** — {polished.get('title', topic)}\n"
+                        f"**Blog URL:** {post_url}\n\n"
+                        f"```\n{preview}\n```\n"
+                        f"_Copy and post manually to personal account._"
+                    )
+                    chunks = [msg[i:i+1900] for i in range(0, len(msg), 1900)]
+                    for chunk in chunks:
+                        requests.post(DISCORD_LINKEDIN_WEBHOOK_URL, json={"content": chunk}, timeout=5)
+                    discord_log(f"✅ Personal LinkedIn draft posted to Discord")
+                else:
+                    discord_log(f"⚠️ Personal LinkedIn generated but DISCORD_LINKEDIN_WEBHOOK_URL not set — saved to Airtable only.")
+        except Exception as ple:
+            discord_log(f"⚠️ Personal LinkedIn generation failed: {ple}")
+            print(f"  Personal LinkedIn generation failed: {ple}")
 
         # ── Instagram image + caption ─────────────────────────────────────
         try:

@@ -46,7 +46,8 @@
 - [ ] Wire pipeline social outputs to Buffer API once posts are flowing consistently (replaces Discord copy-paste for LinkedIn/Instagram/Bluesky)
 - [ ] Build Bluesky account and connect to pipeline (09_bluesky.md agent is ready, needs account + AT Protocol OAuth)
 - [ ] Fix SITE-8 through SITE-19 SEO/sitemap issues in WordPress (redirect sources in sitemap, Excel posts, duplicate conflict post, CTR fixes, www canonical)
-- [ ] Test full pipeline end-to-end with gpt-image-2 images + Instagram + Bluesky outputs
+- [ ] Test full pipeline end-to-end with gpt-image-2 images + Instagram + Bluesky outputs (blocked on OpenAI org verification — ID submitted, pending review)
+- [ ] Once gpt-image-2 verified: backfill missing images on all posts published after 2026-04-29 (delegation post and any others without featured_media)
 - [x] Test rejected post + force publish workflow end-to-end | completed: 2026-04-12 | discord_sent: true
 - [x] Run pillar_planner.py for Local Marketing Systems + Email and Inbox Systems pillars (20 clusters each) | completed: 2026-04-20 | discord_sent: true
 - [x] Fix cluster_writer.py to randomly pick across all active pillars | completed: 2026-04-20 | discord_sent: true
