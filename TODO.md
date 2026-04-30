@@ -43,6 +43,10 @@
 - [x] Set up Discord #linkedin channel + add DISCORD_LINKEDIN_WEBHOOK_URL to .env | completed: 2026-04-29 | discord_sent: true
 - [ ] Evaluate Buffer for automated LinkedIn queue (free tier, connect PulseOps page) | POPS-11
 - [ ] Add AI-tell banned phrases to Polish agent (05_polish.md) — "Here's the thing:", "The reality is:", rule-of-three lists, overly balanced paragraphs | POPS-12
+- [ ] Wire pipeline social outputs to Buffer API once posts are flowing consistently (replaces Discord copy-paste for LinkedIn/Instagram/Bluesky)
+- [ ] Build Bluesky account and connect to pipeline (09_bluesky.md agent is ready, needs account + AT Protocol OAuth)
+- [ ] Fix SITE-8 through SITE-19 SEO/sitemap issues in WordPress (redirect sources in sitemap, Excel posts, duplicate conflict post, CTR fixes, www canonical)
+- [ ] Test full pipeline end-to-end with gpt-image-2 images + Instagram + Bluesky outputs
 - [x] Test rejected post + force publish workflow end-to-end | completed: 2026-04-12 | discord_sent: true
 - [x] Run pillar_planner.py for Local Marketing Systems + Email and Inbox Systems pillars (20 clusters each) | completed: 2026-04-20 | discord_sent: true
 - [x] Fix cluster_writer.py to randomly pick across all active pillars | completed: 2026-04-20 | discord_sent: true

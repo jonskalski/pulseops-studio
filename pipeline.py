@@ -33,6 +33,7 @@ DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_DRAFTS_WEBHOOK_URL") or os.environ
 DISCORD_PIPELINE_LOG_URL = os.environ.get("DISCORD_PIPELINE_LOG_WEBHOOK_URL")
 DISCORD_LINKEDIN_WEBHOOK_URL = os.environ.get("DISCORD_LINKEDIN_WEBHOOK_URL")
 PEXELS_API_KEY = os.environ.get("PEXELS_API_KEY")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
 # ── Publish Schedule ────────────────────────────────────────────────────────
 # Days to publish: 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun
@@ -68,6 +69,8 @@ AGENT_MAX_TOKENS = {
     "05_polish": 6000,
     "06_approver": 1024,
     "07_linkedin": 1024,
+    "08_instagram": 512,
+    "09_bluesky": 256,
 }
 
 # ── Posts Index ─────────────────────────────────────────────────────────────
@@ -403,39 +406,71 @@ def run_agent(name, user_message, run_dir):
         (run_dir / f"{name}.txt").write_text(result_text)
         return result_text
 
-def fetch_pexels_image(keyword):
-    """Search Pexels and return (image_url, photographer, pexels_url)."""
-    if not PEXELS_API_KEY:
-        return None, None, None
+def generate_blog_image(title, topic):
+    """Generate a landscape blog header image via gpt-image-2. Returns PNG bytes or None."""
+    if not OPENAI_API_KEY:
+        return None
     try:
-        r = requests.get(
-            "https://api.pexels.com/v1/search",
-            headers={"Authorization": PEXELS_API_KEY},
-            params={"query": keyword, "per_page": 5, "orientation": "landscape"},
-            timeout=10,
+        from openai import OpenAI
+        import base64
+        client = OpenAI(api_key=OPENAI_API_KEY)
+        prompt = (
+            f"Wide editorial blog header image. Topic: {title}. "
+            f"Dark background with blue and cyan accent colors. "
+            f"Modern, professional, slightly tech-forward aesthetic. "
+            f"No text whatsoever. Clean flat graphic style."
         )
-        photos = r.json().get("photos", [])
-        if not photos:
-            return None, None, None
-        photo = photos[0]
-        return photo["src"]["large2x"], photo["photographer"], photo["url"]
+        response = client.images.generate(
+            model="gpt-image-2",
+            prompt=prompt,
+            size="1536x1024",
+            quality="medium",
+            response_format="b64_json",
+        )
+        return base64.b64decode(response.data[0].b64_json)
     except Exception as e:
-        print(f"  Pexels fetch failed: {e}")
-        return None, None, None
+        print(f"  gpt-image-2 blog image failed: {e}")
+        return None
 
-def upload_image_to_wordpress(image_url, title, slug):
-    """Download image and upload to WordPress media library. Returns media ID."""
+def generate_instagram_image(title, topic):
+    """Generate a square Instagram image with baked-in title text via gpt-image-2. Returns PNG bytes or None."""
+    if not OPENAI_API_KEY:
+        return None
     try:
-        img_data = requests.get(image_url, timeout=30).content
-        filename = f"{slug}.jpg"
+        from openai import OpenAI
+        import base64
+        client = OpenAI(api_key=OPENAI_API_KEY)
+        prompt = (
+            f"Square Instagram post graphic for a small business blog. "
+            f"Dark background, blue and cyan gradient accents. "
+            f"Visually represent this topic: {topic}. "
+            f"Include bold white text headline exactly: \"{title}\". "
+            f"Clean modern business design. Professional."
+        )
+        response = client.images.generate(
+            model="gpt-image-2",
+            prompt=prompt,
+            size="1024x1024",
+            quality="medium",
+            response_format="b64_json",
+        )
+        return base64.b64decode(response.data[0].b64_json)
+    except Exception as e:
+        print(f"  gpt-image-2 Instagram image failed: {e}")
+        return None
+
+def upload_image_to_wordpress(image_bytes, title, slug):
+    """Upload PNG bytes to WordPress media library. Returns (media_id, source_url)."""
+    try:
+        filename = f"{slug}.png"
         r = requests.post(
             f"{WP_URL}/wp-json/wp/v2/media",
             auth=(WP_USER, WP_APP_PASSWORD),
             headers={
                 "Content-Disposition": f'attachment; filename="{filename}"',
-                "Content-Type": "image/jpeg",
+                "Content-Type": "image/png",
             },
-            data=img_data,
+            data=image_bytes,
             timeout=60,
         )
         r.raise_for_status()
@@ -450,12 +485,12 @@ def publish_to_wordpress(post_data, keyword=None, allowed_days=None):
     featured_media_id = None
     uploaded_image_url = None
     search_term = keyword or post_data.get("slug", "technology automation").replace("-", " ")
-    image_url, photographer, pexels_url = fetch_pexels_image(search_term)
-    if image_url:
-        print(f"  Fetching image: {pexels_url}")
-        featured_media_id, uploaded_image_url = upload_image_to_wordpress(image_url, post_data["title"], post_data["slug"])
+    print(f"  Generating blog image via gpt-image-2...")
+    blog_image_bytes = generate_blog_image(post_data["title"], search_term)
+    if blog_image_bytes:
+        featured_media_id, uploaded_image_url = upload_image_to_wordpress(blog_image_bytes, post_data["title"], post_data["slug"])
         if featured_media_id:
-            print(f"  Image uploaded (ID: {featured_media_id}, photo by {photographer})")
+            print(f"  Blog image uploaded (ID: {featured_media_id})")
 
     # Inject image into content after first paragraph.
     # Use Gutenberg block format with attachment ID so Yoast deduplicates against
@@ -948,6 +983,81 @@ def run_pipeline(topic, why=None, allowed_days=None, pillar=None, cluster_id=Non
         except Exception as le:
             discord_log(f"⚠️ LinkedIn generation failed: {le}")
             print(f"  LinkedIn generation failed: {le}")
+
+        # ── Instagram image + caption ─────────────────────────────────────
+        try:
+            discord_log(f"📸 Generating Instagram image...")
+            ig_bytes = generate_instagram_image(polished.get("title", topic), keyword or topic)
+            if ig_bytes and DISCORD_LINKEDIN_WEBHOOK_URL:
+                requests.post(
+                    DISCORD_LINKEDIN_WEBHOOK_URL,
+                    files={"file": (f"{polished.get('slug', 'post')}-instagram.png", ig_bytes, "image/png")},
+                    data={"content": f"📸 **Instagram image** — {polished.get('title', topic)}\n_Save and post manually._"},
+                    timeout=30,
+                )
+                discord_log(f"✅ Instagram image posted to Discord")
+            elif ig_bytes:
+                (run_dir / "instagram.png").write_bytes(ig_bytes)
+                discord_log(f"✅ Instagram image saved to run folder")
+        except Exception as ie:
+            discord_log(f"⚠️ Instagram image generation failed: {ie}")
+            print(f"  Instagram image generation failed: {ie}")
+
+        try:
+            discord_log(f"✍️ Generating Instagram caption...")
+            plain_content = re.sub(r'<[^>]+>', '', polished.get("content", "")).strip()
+            ig_input = (
+                f"Title: {polished.get('title', topic)}\n"
+                f"Meta description: {polished.get('meta_description', '')}\n"
+                f"Post excerpt:\n{plain_content[:1500]}"
+            )
+            ig_result = run_agent("08_instagram", ig_input, run_dir)
+            ig_caption = ig_result.get("caption", "") if isinstance(ig_result, dict) else str(ig_result)
+            if ig_caption:
+                try:
+                    from airtable.client import log_social_post
+                    log_social_post(polished.get("title", topic), "Instagram", ig_caption, wp_post_url=post_url)
+                except Exception:
+                    pass
+                if DISCORD_LINKEDIN_WEBHOOK_URL:
+                    caption_msg = (
+                        f"**Instagram Caption** — {polished.get('title', topic)}\n\n"
+                        f"{ig_caption.replace(chr(92) + 'n', chr(10))}"
+                    )
+                    requests.post(DISCORD_LINKEDIN_WEBHOOK_URL, json={"content": caption_msg}, timeout=10)
+                    discord_log(f"✅ Instagram caption posted to Discord")
+        except Exception as ice:
+            discord_log(f"⚠️ Instagram caption generation failed: {ice}")
+            print(f"  Instagram caption generation failed: {ice}")
+
+        # ── Bluesky post ──────────────────────────────────────────────────
+        try:
+            discord_log(f"🦋 Generating Bluesky post...")
+            plain_content = re.sub(r'<[^>]+>', '', polished.get("content", "")).strip()
+            bsky_input = (
+                f"Title: {polished.get('title', topic)}\n"
+                f"Blog URL: {post_url}\n"
+                f"Meta description: {polished.get('meta_description', '')}\n"
+                f"Post excerpt:\n{plain_content[:1500]}"
+            )
+            bsky_result = run_agent("09_bluesky", bsky_input, run_dir)
+            bsky_post = bsky_result.get("post", "") if isinstance(bsky_result, dict) else str(bsky_result)
+            if bsky_post:
+                try:
+                    from airtable.client import log_social_post
+                    log_social_post(polished.get("title", topic), "Bluesky", bsky_post, wp_post_url=post_url)
+                except Exception:
+                    pass
+                if DISCORD_LINKEDIN_WEBHOOK_URL:
+                    requests.post(
+                        DISCORD_LINKEDIN_WEBHOOK_URL,
+                        json={"content": f"**Bluesky Post** — {polished.get('title', topic)}\n\n{bsky_post}"},
+                        timeout=10,
+                    )
+                    discord_log(f"✅ Bluesky post posted to Discord")
+        except Exception as bse:
+            discord_log(f"⚠️ Bluesky post generation failed: {bse}")
+            print(f"  Bluesky post generation failed: {bse}")
     except Exception as e:
         discord(f"❌ **WordPress publish failed:** {str(e)}")
         print(f"\n❌ Publish failed: {e}")

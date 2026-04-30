@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-04-30 — gpt-image-2 integration, Instagram + Bluesky agents, OpenAI key
+
+### pipeline.py
+- Replaced `fetch_pexels_image()` with `generate_blog_image()` — calls gpt-image-2 (1536×1024, no text, dark/cyan style, PNG bytes)
+- Added `generate_instagram_image()` — calls gpt-image-2 (1024×1024, title text baked in, PNG bytes)
+- Changed `upload_image_to_wordpress()` to accept bytes directly instead of URL, updated Content-Type to image/png
+- Added `OPENAI_API_KEY` env var
+- Added `"08_instagram": 512` and `"09_bluesky": 256` to AGENT_MAX_TOKENS map
+- Added Instagram caption generation step (08_instagram agent) — logs to Airtable Social Posts, posts to Socially Bot Discord
+- Added Bluesky post generation step (09_bluesky agent) — logs to Airtable Social Posts, posts to Socially Bot Discord
+
+### agents/08_instagram.md
+- New agent: Instagram captions — 3 short paragraphs, no staircase, deadpan voice, "link in bio → pulseops.us/blog" hardcoded, 2-3 hashtags max
+
+### agents/09_bluesky.md
+- New agent: Bluesky posts — 300 char limit, one punchy paragraph, direct URL, same voice as LinkedIn/Instagram
+
 ## 2026-04-29 — Pipeline timeout fix, LinkedIn wiring, log_social_post fix, 07_linkedin.md rewrite
 
 ### pipeline.py
