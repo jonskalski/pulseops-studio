@@ -40,23 +40,6 @@ Generic headers produce generic posts. Every H2 must pass the HubSpot listicle t
 
 The test: read the header aloud. If it sounds like it belongs on a 2018 HubSpot listicle or a generic "10 Tips for Small Business Owners" article, rewrite it. At least 3 of your H2s must have genuine personality — a specific angle, a subtle opinion, or a counterintuitive framing.
 
-## Existing posts on the site (for interlinking):
-- Why Every Small Business Needs Workflow Automation: /why-every-small-business-needs-workflow-automation/
-- 5 Quick Ways to Improve Small Business Efficiency: /5-quick-ways-to-improve-small-business-efficiency/
-- AI & Automation: Your Escape Plan from Spreadsheet Hell: /ai-automation-smb-guide/
-- Stop Nesting IFs. You Deserve Better. (SWITCH): /excel-switch-vs-nested-if/
-- Excel Functions That Deserve More Respect: /underrated-excel-functions/
-- XLOOKUP: The Function VLOOKUP Wished It Could Be: /excel-xlookup-function/
-- LET: The Function for People Who Are Tired of Tracing Logic Spirals: /excel-let-function/
-- FILTER: Because Life's Too Short for Manual Data Sifting: /excel-filter-function/
-- SEQUENCE: For Everyone Who's Manually Typed Numbers Down a Column: /excel-sequence-function/
-- TEXTJOIN: When Your Text Needs to Behave: /excel-textjoin-function/
-- AGGREGATE: For When Regular Functions Can't Handle the Chaos: /excel-aggregate-function/
-- CHOOSE: When Your Nested IFs Look Like Russian Dolls: /excel-choose-function/
-- ISFORMULA: The Spreadsheet Detective's Secret Weapon: /excel-isformula-function/
-- FORMULATEXT: When You Need to Know What's Really Happening: /excel-formulatext-function/
-- SPILL: When Your Formulas Need Room to Breathe: /excel-spill-function/
-
 ## Output Format
 Return ONLY valid JSON in this exact structure:
 {

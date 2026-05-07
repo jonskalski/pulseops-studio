@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-05-07 — Control panel foundation: ticket system, job queue, worker, Linear sync
+
+### tickets/
+- New folder: file-based Claude/Codex collaborative ticket workflow
+- POPS-15: ticket scaffold (plan.md, review.md, README, TICKET_TEMPLATE.md)
+- POPS-16: SQLite job queue + worker (plan.md, review.md)
+- POPS-17/18/19: backlog tickets for validation fixes, cleanup, notifications
+
+### queue_db.py
+- New file: SQLite helper for pulseops_control.db; full jobs schema; enqueue/list/show CLI
+
+### queue_worker.py
+- New file: one-job-at-a-time worker with lock file, stale detection, command mapping for 4 job types, log streaming, --once flag
+
+### CONTROL_PANEL_WORKER_PLAN.md + control_panel_mockup.html
+- New planning artifacts for the control panel build
+
+### TODO.md
+- Added: migrate ticket workflow to Linear (once control panel is proven)
+
 ## 2026-04-30 — Personal LinkedIn agent, voice calibration, image fix, Airtable platform field fix
 
 ### agents/10_personal_linkedin.md

@@ -633,7 +633,10 @@ def resume_pipeline(run_dir_path):
         discord_log(f"❌ **DENIED** (attempt 1) — Failed: {', '.join(failed) or 'unknown'}")
 
     if not approved:
-        polished, approval = polish_and_approve(polished, "attempt 2/3", approver_feedback=last_comments)
+        discord_log(f"🔄 Routing through Edit with approver feedback (attempt 2/3)...")
+        edit2_input = f"Draft:\n{json.dumps(polished, indent=2)}\n\nApprover feedback to fix:\n{last_comments}"
+        attempt2_edited = run_agent("04_edit", edit2_input, run_dir)
+        polished, approval = polish_and_approve(attempt2_edited, "attempt 2/3", approver_feedback=last_comments)
         if isinstance(approval, dict) and approval.get("decision") == "APPROVED":
             discord_log(f"✅ **APPROVED** on attempt 2")
             approved = True
@@ -643,18 +646,9 @@ def resume_pipeline(run_dir_path):
             failed = [k for k, v in scores.items() if v == "fail"]
             discord_log(f"❌ **DENIED** (attempt 2) — Failed: {', '.join(failed) or 'unknown'}")
 
-    if not approved and outline and research:
-        discord_log(f"🔄 Rerunning Draft with approver feedback (attempt 3/3)...")
-        draft_retry_input = (
-            f"Outline:\n{json.dumps(outline, indent=2)}\n\n"
-            f"Research:\n{json.dumps(research, indent=2)}\n\n"
-            f"Approver feedback from previous attempt (fix these issues):\n{last_comments}"
-        )
-        if why:
-            draft_retry_input += f"\n\nTopic context: {why}"
-        redraft = run_agent("03_draft", draft_retry_input, run_dir)
-        discord_log(f"✅ Draft rerun complete")
-        polished, approval = polish_and_approve(redraft, "attempt 3/3", approver_feedback=last_comments)
+    if not approved:
+        discord_log(f"🔄 Re-polishing with approver feedback (attempt 3/3)...")
+        polished, approval = polish_and_approve(polished, "attempt 3/3", approver_feedback=last_comments)
         if isinstance(approval, dict) and approval.get("decision") == "APPROVED":
             discord_log(f"✅ **APPROVED** on attempt 3")
             approved = True
@@ -841,10 +835,12 @@ def run_pipeline(topic, why=None, allowed_days=None, pillar=None, cluster_id=Non
         score_summary = f"**Failed:** {', '.join(failed) or 'unknown'}  |  **Passed:** {', '.join(passed) or 'none'}"
         discord_log(f"❌ **DENIED** (attempt 1)\n{score_summary}\n**Reason:** {last_comments}")
 
-    # Attempt 2: Polish again → Approve
+    # Attempt 2: Edit with approver feedback → Polish → Approve
     if not approved:
-        discord_log(f"🔄 Sending back to Polish (attempt 2/3)...")
-        polished, approval = polish_and_approve(polished, "attempt 2/3", run_dir, approver_feedback=last_comments)
+        discord_log(f"🔄 Routing through Edit with approver feedback (attempt 2/3)...")
+        edit2_input = f"Draft:\n{json.dumps(polished, indent=2)}\n\nApprover feedback to fix:\n{last_comments}"
+        attempt2_edited = run_agent("04_edit", edit2_input, run_dir)
+        polished, approval = polish_and_approve(attempt2_edited, "attempt 2/3", run_dir, approver_feedback=last_comments)
         if isinstance(approval, dict) and approval.get("decision") == "APPROVED":
             scores = approval.get("scores", {})
             scores_str = "  " + "  ".join(f"{k}: {v}" for k, v in scores.items())
@@ -858,21 +854,10 @@ def run_pipeline(topic, why=None, allowed_days=None, pillar=None, cluster_id=Non
             score_summary = f"**Failed:** {', '.join(failed) or 'unknown'}  |  **Passed:** {', '.join(passed) or 'none'}"
             discord_log(f"❌ **DENIED** (attempt 2)\n{score_summary}\n**Reason:** {last_comments}")
 
-    # Attempt 3: Rerun Draft with approver feedback → Polish → Approve
+    # Attempt 3: Re-polish attempt 2 output with feedback → Approve
     if not approved:
-        discord_log(f"🔄 Rerunning Draft with approver feedback (attempt 3/3)...")
-        draft_retry_input = (
-            f"Outline:\n{json.dumps(outline, indent=2)}\n\n"
-            f"Research:\n{json.dumps(research, indent=2)}\n\n"
-            f"Approver feedback from previous attempt (fix these issues):\n{last_comments}"
-        )
-        if linking_note:
-            draft_retry_input += linking_note
-        if why:
-            draft_retry_input += f"\n\nTopic context: {why}"
-        redraft = run_agent("03_draft", draft_retry_input, run_dir)
-        discord_log(f"✅ Draft rerun complete")
-        polished, approval = polish_and_approve(redraft, "attempt 3/3", run_dir, approver_feedback=last_comments)
+        discord_log(f"🔄 Re-polishing with approver feedback (attempt 3/3)...")
+        polished, approval = polish_and_approve(polished, "attempt 3/3", run_dir, approver_feedback=last_comments)
         if isinstance(approval, dict) and approval.get("decision") == "APPROVED":
             scores = approval.get("scores", {})
             scores_str = "  " + "  ".join(f"{k}: {v}" for k, v in scores.items())

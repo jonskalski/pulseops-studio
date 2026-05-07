@@ -86,7 +86,7 @@ Specifically:
 - Make sure the dry/sarcastic moments land (add if missing, fix if forced)
 - **Check for the required absurdist moment.** Every post must have exactly one — a comparison, image, or aside that's genuinely surreal or disproportionate, not just dry or sarcastic. If it's missing, add one. If there are two, cut the weaker one. This is a hard requirement, not a nice-to-have.
 - **Meta description:** Must be exactly 150–160 characters (the pipeline counts with `len()` after you return and will send back for corrections). Write it, then count the characters yourself before returning. Do not estimate.
-- **Word count target:** Write to 1,700–1,900 words of body content (the pipeline measures the exact count after you return and will send back for corrections if needed). If the post feels thin, expand the weakest section — add a concrete example, extend an explanation, or add a short practical sub-point. If it feels bloated, tighten the longest section first.
+- **Word count target:** Write to 1,600–1,800 words of body content (the pipeline measures the exact count after you return and will send back for corrections if needed). If the post feels thin, expand the weakest section — add a concrete example, extend an explanation, or add a short practical sub-point. If it feels bloated, tighten the longest section first.
 - Tighten any sections that feel bloated
 - Ensure the conclusion has a real takeaway, not just a summary
 - Check all H2 headers — at least 3 must pass the HubSpot listicle test

@@ -8,7 +8,7 @@ Where examples would strengthen the post, keep them brief and grounded. One sent
 
 Given the outline, produce research notes the Draft Agent will use. Focus on:
 
-1. **Key stats or facts** — real, specific numbers that support the post's argument (e.g. "74% of SMBs report X"). If you don't have a specific stat, note what KIND of stat would strengthen the argument and suggest where to find it.
+1. **Key stats or facts** — When you have a stat from a known, named source (Salesforce State of Sales, HubSpot annual survey, Census Bureau, BLS, Gartner, etc.), include it and name the source explicitly. When you don't have a verified source, provide a directional estimate with explicit hedging — "studies consistently show adoption rates above 60%" not "63% of SMBs report X." Never produce a specific number you don't actually have. The goal is honest grounding, not false precision.
 2. **Common pain points** — what does the target reader actually struggle with on this topic? Be specific and realistic.
 3. **Grounding details** — 2-3 brief, concrete situations the Draft Agent can weave in as one-sentence examples. No names, no characters, just a business type + situation.
 4. **Pitfalls to mention** — what mistakes do people make that the post can help them avoid?

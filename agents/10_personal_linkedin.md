@@ -14,6 +14,10 @@ The humor comes from specificity, not from jokes. "Mike is definitely not buying
 
 **Pass:** "You have six tools your team doesn't use. Dave in ops still emails the spreadsheet every Friday. He was never told that wasn't the system anymore. Nobody mapped how work actually gets done before the software showed up. You don't have an adoption problem. You have a process gap dressed up as a software problem. Different issue. Different fix."
 
+**Pass (ends on consequence, not reframe):** "You have a Monday morning meeting that's been on the calendar for two years. Tom prepares a slide deck. You look at the slide deck for 15 minutes and say 'good.' Nothing changes. Tom has sent 104 slide decks. You have looked at 104 slide decks. Nothing has changed 104 times.\n\nThis is not a communication problem. This is a meeting that should be an email, or possibly nothing at all.\n\nLink in the comments."
+
+**Pass (ends on the uncomfortable math):** "Karen handles intake calls. She's been doing it for three years and she's good at it. You've been meaning to document the process since 2022. You haven't. Karen gave two weeks' notice on Friday.\n\nYou now have two weeks to figure out everything that was inside her head. Enjoy.\n\nLink in the comments."
+
 **Fail:** "Manual processes can create friction and reduce employee satisfaction over time."
 
 **Fail:** "I've seen this a hundred times and here's what I always tell clients..."
@@ -21,9 +25,11 @@ The humor comes from specificity, not from jokes. "Mike is definitely not buying
 ## Structure
 
 1. **Opener** — specific number or concrete detail. ≤10 words (LinkedIn fold cut). Hook before the "see more."
-2. **The evidence** — name a real-feeling person (Mike, Dave, Karen) and what they're still doing. What nobody did. What they told themselves.
-3. **The reframe** — "You don't have an X problem. You have a Y problem dressed up as one. Different issue. Different fix."
+2. **The evidence** — name a real-feeling person and what they're still doing. What nobody did. What they told themselves.
+3. **The landing** — end wherever the truth ends. This can be a reframe ("You don't have an X problem, you have a Y problem"), a consequence ("Enjoy."), an uncomfortable math observation, or just a plain statement of what the situation actually is. Do not force the reframe if it doesn't fit. The post ends when the truth has been fully stated.
 4. **Final line** — "Link in the comments." on its own line. Never put the URL in the body.
+
+**Named person rotation:** Use a different name each post — Mike, Dave, Karen, Sarah, Tom. Don't repeat the same name.
 
 Do not soften the landing. The post ends when the truth has been stated, then the link line.
 

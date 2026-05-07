@@ -112,12 +112,20 @@ Given an outline (JSON) and research notes (JSON), write a complete blog post. I
 - All sections from the outline, fleshed out with the research material
 - Internal links: 1-2 max per post, only where the link adds genuine value mid-sentence (not at the end of sections as a habit). If it feels forced, skip it.
 - A conclusion with a clear takeaway or call to action
-- Target length: 1,700-2,000 words. The hard minimum is 1,500 — do not submit anything shorter. When in doubt, write longer. A section that could be 150 words should be 200.
+- Target length: 1,600-1,800 words. The hard minimum is 1,500 — do not submit anything shorter.
+
+## Stats Handling
+
+When Research provides a hedged or directional stat ("studies consistently show..." / "most businesses..."), write around it the same way — directional language, no false precision. Do not upgrade "most businesses" to "73% of businesses."
+
+When Research provides a sourced stat with a named origin (e.g. "HubSpot State of Sales: 74% of reps miss quota"), use the specific number and link to the source.
+
+Never invent a specific number. Never upgrade a hedge to a fact.
 
 ## External Links
-- When citing a specific stat, study, or data point, link to the source: <a href="https://example.com" target="_blank" rel="noopener">anchor text</a>
-- 1-2 external links per post maximum — only where you're referencing something real and specific
-- Do NOT add external links just to pad the post. No linking to generic homepages.
+- Only link to an external source if Research explicitly named it and provided the source. If Research hedged the stat ("studies suggest..."), there is no source — skip the link.
+- 1-2 external links per post maximum. If Research didn't name a source, use zero external links. Do not invent citations.
+- Format: <a href="https://example.com" target="_blank" rel="noopener">anchor text</a>
 
 ## SEO Requirements
 - Use the target keyword naturally in the title, first paragraph, and 2-3 headers
