@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PulseOps Control Panel Mockup</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --recess: #090b12;
+      --base: #10131d;
+      --surface: #171b28;
+      --surface-2: #202536;
+      --surface-3: #2a3042;
+      --border: #343a4d;
+      --border-soft: rgba(255, 255, 255, 0.07);
+      --text: #f1f3f7;
+      --muted: #a3a9b8;
+      --faint: #697083;
+      --accent: #d984a7;
+      --accent-2: #94e8ff;
+      --good: #6ee7a8;
+      --warn: #f4c46b;
+      --bad: #ff7f8b;
+      --blue: #4f6dff;
+      --gradient: linear-gradient(135deg, #4455dd, #00aaff, #00e8ff);
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+      --font: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    html {
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 4%, rgba(68, 85, 221, 0.18), transparent 32rem),
+        radial-gradient(circle at 92% 0%, rgba(0, 232, 255, 0.10), transparent 28rem),
+        var(--base);
+      font-family: var(--font);
+      line-height: 1.5;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    .skip {
+      position: absolute;
+      left: 16px;
+      top: -80px;
+      z-index: 20;
+      padding: 10px 14px;
+      background: var(--accent);
+      color: #170c12;
+      text-decoration: none;
+      font-weight: 800;
+    }
+
+    .skip:focus {
+      top: 16px;
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .side {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 26px 20px;
+      background: rgba(9, 11, 18, 0.88);
+      border-right: 1px solid var(--border-soft);
+      backdrop-filter: blur(18px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 34px;
+    }
+
+    .mark {
+      width: 42px;
+      height: 42px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background:
+        linear-gradient(var(--recess), var(--recess)) padding-box,
+        var(--gradient) border-box;
+      border-radius: 2px;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.1;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .brand small {
+      display: block;
+      margin-top: 5px;
+      color: var(--faint);
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .worker-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--good);
+      box-shadow: 0 0 0 5px rgba(110, 231, 168, 0.12);
+    }
+
+    .nav {
+      display: grid;
+      gap: 8px;
+    }
+
+    .nav a {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 12px;
+      border: 1px solid transparent;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      border-radius: 2px;
+    }
+
+    .nav a[aria-current="page"] {
+      color: var(--text);
+      background: var(--surface);
+      border-color: var(--border-soft);
+    }
+
+    .nav span {
+      color: var(--faint);
+      font-size: 12px;
+    }
+
+    .side-card {
+      margin-top: 30px;
+      padding: 16px;
+      background: var(--surface);
+      border: 1px solid var(--border-soft);
+      border-radius: 2px;
+    }
+
+    .side-card p {
+      margin: 0 0 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .side-card strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 12px;
+      letter-spacing: 0.13em;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+
+    .main {
+      min-width: 0;
+      padding: 28px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+
+    .kicker {
+      margin: 0 0 10px;
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .topbar h2 {
+      margin: 0;
+      max-width: 760px;
+      font-size: clamp(30px, 5vw, 56px);
+      line-height: 0.98;
+      letter-spacing: -0.05em;
+    }
+
+    .topbar p {
+      max-width: 62ch;
+      margin: 16px 0 0;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding: 11px 14px;
+      border-radius: 2px;
+      cursor: pointer;
+      font-weight: 800;
+      font-size: 13px;
+      text-decoration: none;
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #1b1015;
+    }
+
+    .btn.danger {
+      color: var(--bad);
+      border-color: rgba(255, 127, 139, 0.42);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(330px, 0.8fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .stack {
+      display: grid;
+      gap: 20px;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .metric {
+      padding: 18px;
+      background: rgba(23, 27, 40, 0.86);
+      border: 1px solid var(--border-soft);
+      border-radius: 2px;
+    }
+
+    .metric span {
+      display: block;
+      margin-bottom: 10px;
+      color: var(--faint);
+      font-size: 11px;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+    }
+
+    .metric strong {
+      font-size: 28px;
+      letter-spacing: -0.04em;
+    }
+
+    .panel {
+      background: rgba(23, 27, 40, 0.92);
+      border: 1px solid var(--border-soft);
+      border-radius: 2px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border-soft);
+      background: rgba(9, 11, 18, 0.35);
+    }
+
+    .panel-head h3 {
+      margin: 0;
+      font-size: 14px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .panel-head p {
+      margin: 4px 0 0;
+      color: var(--faint);
+      font-size: 13px;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .link {
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .inbox-item,
+    .queue-item,
+    .draft-item {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    .inbox-item:last-child,
+    .queue-item:last-child,
+    .draft-item:last-child {
+      border-bottom: 0;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+    }
+
+    .item-title {
+      margin: 0 0 8px;
+      font-size: 18px;
+      line-height: 1.25;
+      letter-spacing: -0.02em;
+    }
+
+    .item-copy {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .pills {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      padding: 4px 9px;
+      border: 1px solid var(--border-soft);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--muted);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .pill.good {
+      color: var(--good);
+      border-color: rgba(110, 231, 168, 0.35);
+    }
+
+    .pill.warn {
+      color: var(--warn);
+      border-color: rgba(244, 196, 107, 0.35);
+    }
+
+    .pill.bad {
+      color: var(--bad);
+      border-color: rgba(255, 127, 139, 0.35);
+    }
+
+    .item-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      min-width: 240px;
+    }
+
+    .mini {
+      padding: 8px 10px;
+      font-size: 12px;
+    }
+
+    .running {
+      position: relative;
+      padding: 20px;
+      overflow: hidden;
+    }
+
+    .running::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--gradient);
+    }
+
+    .progress {
+      height: 8px;
+      margin: 18px 0 10px;
+      background: var(--recess);
+      border: 1px solid var(--border-soft);
+      overflow: hidden;
+    }
+
+    .progress span {
+      display: block;
+      width: 58%;
+      height: 100%;
+      background: var(--gradient);
+    }
+
+    .log {
+      margin-top: 14px;
+      padding: 14px;
+      background: #080a10;
+      border: 1px solid var(--border-soft);
+      color: #bdc4d6;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+    }
+
+    .compose {
+      padding: 20px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+    }
+
+    .field label {
+      color: var(--faint);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .field input,
+    .field textarea,
+    .field select {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: var(--recess);
+      color: var(--text);
+      padding: 12px;
+      border-radius: 2px;
+      outline: none;
+    }
+
+    .field input:focus,
+    .field textarea:focus,
+    .field select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(217, 132, 167, 0.13);
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .health {
+      display: grid;
+      gap: 10px;
+      padding: 18px 20px;
+    }
+
+    .health-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-soft);
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .health-row:last-child {
+      border-bottom: 0;
+    }
+
+    .health-row strong {
+      color: var(--text);
+      text-align: right;
+    }
+
+    .mobile-tabs {
+      display: none;
+      position: sticky;
+      bottom: 0;
+      z-index: 10;
+      grid-template-columns: repeat(4, 1fr);
+      background: rgba(9, 11, 18, 0.94);
+      border-top: 1px solid var(--border-soft);
+      backdrop-filter: blur(18px);
+    }
+
+    .mobile-tabs a {
+      padding: 12px 8px;
+      color: var(--muted);
+      text-align: center;
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .mobile-tabs a[aria-current="page"] {
+      color: var(--accent);
+    }
+
+    @media (max-width: 1040px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .side {
+        display: none;
+      }
+
+      .main {
+        padding: 22px 18px 84px;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .mobile-tabs {
+        display: grid;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .topbar {
+        display: grid;
+      }
+
+      .actions {
+        justify-content: stretch;
+      }
+
+      .actions .btn {
+        flex: 1;
+        justify-content: center;
+      }
+
+      .row {
+        display: grid;
+      }
+
+      .item-actions {
+        min-width: 0;
+        justify-content: stretch;
+      }
+
+      .item-actions .btn {
+        flex: 1;
+        justify-content: center;
+      }
+
+      .split {
+        grid-template-columns: 1fr;
+      }
+
+      .metrics {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .metric {
+        padding: 14px;
+      }
+
+      .metric strong {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to dashboard</a>
+
+  <div class="shell">
+    <aside class="side" aria-label="Control panel navigation">
+      <div class="brand">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div class="mark">PO</div>
+          <div>
+            <h1>PulseOps</h1>
+            <small>Control</small>
+          </div>
+        </div>
+        <span class="worker-dot" title="Worker online"></span>
+      </div>
+
+      <nav class="nav">
+        <a href="#" aria-current="page">Inbox <span>7</span></a>
+        <a href="#">Write This <span>new</span></a>
+        <a href="#">Queue <span>4</span></a>
+        <a href="#">Runs <span>24</span></a>
+        <a href="#">Rejected <span>3</span></a>
+        <a href="#">Social Drafts <span>18</span></a>
+        <a href="#">Health <span>ok</span></a>
+      </nav>
+
+      <div class="side-card">
+        <strong>Current rule</strong>
+        <p>Nothing starts the pipeline directly. Everything becomes a job. The worker runs one at a time.</p>
+        <p style="margin-bottom: 0; color: var(--faint);">Good. Boring. Harder to break.</p>
+      </div>
+    </aside>
+
+    <main class="main" id="main">
+      <header class="topbar">
+        <div>
+          <p class="kicker">Private dashboard mockup</p>
+          <h2>The cockpit for the content machine.</h2>
+          <p>Approve topics, queue jobs, watch runs, handle rejections, and copy social drafts from your phone without trusting Discord to remember what happened.</p>
+        </div>
+        <div class="actions">
+          <a class="btn primary" href="#write-this">Write This</a>
+          <a class="btn" href="#queue">View Queue</a>
+        </div>
+      </header>
+
+      <section class="metrics" aria-label="System summary">
+        <div class="metric">
+          <span>Queued</span>
+          <strong>4</strong>
+        </div>
+        <div class="metric">
+          <span>Needs review</span>
+          <strong>3</strong>
+        </div>
+        <div class="metric">
+          <span>Worker</span>
+          <strong>On</strong>
+        </div>
+        <div class="metric">
+          <span>Last publish</span>
+          <strong>May 6</strong>
+        </div>
+      </section>
+
+      <div class="grid">
+        <div class="stack">
+          <section class="panel" aria-labelledby="inbox-title">
+            <div class="panel-head">
+              <div>
+                <h3 id="inbox-title">Inbox</h3>
+                <p>Things waiting for a human decision.</p>
+              </div>
+              <a class="link" href="#">View all</a>
+            </div>
+
+            <article class="inbox-item">
+              <div class="row">
+                <div>
+                  <h4 class="item-title">Google Workspace vs Microsoft 365 for small business</h4>
+                  <p class="item-copy">Topic suggestion from the morning picker. Search intent is obvious. The internet has somehow not finished arguing about email yet.</p>
+                  <div class="pills">
+                    <span class="pill good">topic suggestion</span>
+                    <span class="pill">hot topic</span>
+                    <span class="pill">Tue/Thu</span>
+                  </div>
+                </div>
+                <div class="item-actions">
+                  <button class="btn mini primary">Approve</button>
+                  <button class="btn mini">Regenerate</button>
+                  <button class="btn mini danger">Reject</button>
+                </div>
+              </div>
+            </article>
+
+            <article class="inbox-item">
+              <div class="row">
+                <div>
+                  <h4 class="item-title">Email and Inbox Systems for SMB Owners</h4>
+                  <p class="item-copy">Pillar has suggested clusters ready. Approving this creates a batch of cluster jobs instead of firing the pipeline immediately.</p>
+                  <div class="pills">
+                    <span class="pill warn">pillar</span>
+                    <span class="pill">20 clusters</span>
+                  </div>
+                </div>
+                <div class="item-actions">
+                  <button class="btn mini primary">Build Map</button>
+                  <button class="btn mini danger">Skip</button>
+                </div>
+              </div>
+            </article>
+
+            <article class="inbox-item">
+              <div class="row">
+                <div>
+                  <h4 class="item-title">Stop Boosting Facebook Posts</h4>
+                  <p class="item-copy">Previous run failed after repeated API timeouts. The clean option is a resume job, not a new mystery run.</p>
+                  <div class="pills">
+                    <span class="pill bad">failed</span>
+                    <span class="pill">resume available</span>
+                  </div>
+                </div>
+                <div class="item-actions">
+                  <button class="btn mini primary">Resume</button>
+                  <button class="btn mini">View Log</button>
+                </div>
+              </div>
+            </article>
+          </section>
+
+          <section class="panel" id="queue" aria-labelledby="queue-title">
+            <div class="panel-head">
+              <div>
+                <h3 id="queue-title">Queue</h3>
+                <p>One worker. One job. No stampede.</p>
+              </div>
+              <a class="link" href="#">Open logs</a>
+            </div>
+
+            <article class="queue-item running">
+              <div class="row">
+                <div>
+                  <h4 class="item-title">Running: dirty contact list CRM problems</h4>
+                  <p class="item-copy">Step 5/6: Polish agent. Started 42 minutes ago. Publish days: Mon/Wed/Fri.</p>
+                </div>
+                <span class="pill good">running</span>
+              </div>
+              <div class="progress" aria-label="Job progress"><span></span></div>
+              <div class="log">[11:42] Step 4 complete: Edit agent
+[11:43] Polish attempt 1/3 started
+[11:51] Auto-fix: meta description was 142 chars
+[11:53] Re-polish running...</div>
+            </article>
+
+            <article class="queue-item">
+              <div class="row">
+                <div>
+                  <h4 class="item-title">Queued: simple CRM for local follow-up</h4>
+                  <p class="item-copy">Cluster job. Pillar: CRM Basics. Source: cluster_writer.</p>
+                </div>
+                <div class="item-actions">
+                  <button class="btn mini">Move Up</button>
+                  <button class="btn mini danger">Cancel</button>
+                </div>
+              </div>
+            </article>
+
+            <article class="queue-item">
+              <div class="row">
+                <div>
+                  <h4 class="item-title">Queued: force publish reviewed post</h4>
+                  <p class="item-copy">Manual override from Rejected. This will still run through the worker, not inside the web request.</p>
+                </div>
+                <span class="pill warn">manual</span>
+              </div>
+            </article>
+          </section>
+        </div>
+
+        <aside class="stack" aria-label="Secondary panels">
+          <section class="panel" id="write-this" aria-labelledby="write-title">
+            <div class="panel-head">
+              <div>
+                <h3 id="write-title">Write This</h3>
+                <p>Replacement for dropping a topic into Discord.</p>
+              </div>
+            </div>
+
+            <form class="compose">
+              <div class="field">
+                <label for="topic">Topic or URL</label>
+                <textarea id="topic" rows="4" placeholder="Paste a topic, article URL, or rough idea. The dashboard creates a job. The worker does the dangerous part later."></textarea>
+              </div>
+
+              <div class="field">
+                <label for="context">Context</label>
+                <input id="context" type="text" placeholder="Why this matters, if there is a reason">
+              </div>
+
+              <div class="split">
+                <div class="field">
+                  <label for="type">Type</label>
+                  <select id="type">
+                    <option>Hot topic</option>
+                    <option>Standalone</option>
+                    <option>Cluster</option>
+                    <option>Resume run</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="days">Publish days</label>
+                  <select id="days">
+                    <option>Tue/Thu</option>
+                    <option>Mon/Wed/Fri</option>
+                    <option>Any weekday</option>
+                  </select>
+                </div>
+              </div>
+
+              <button class="btn primary" type="button">Create Job</button>
+            </form>
+          </section>
+
+          <section class="panel" aria-labelledby="rejected-title">
+            <div class="panel-head">
+              <div>
+                <h3 id="rejected-title">Rejected</h3>
+                <p>Failed posts that need a decision.</p>
+              </div>
+            </div>
+
+            <article class="draft-item">
+              <h4 class="item-title">The hidden cost of free CRMs</h4>
+              <p class="item-copy">Approver denied structure and EEAT. Rewrite is safer than force publish.</p>
+              <div class="pills">
+                <span class="pill bad">needs review</span>
+                <span class="pill">run available</span>
+              </div>
+              <div class="item-actions" style="margin-top: 14px;">
+                <button class="btn mini primary">Rewrite</button>
+                <button class="btn mini">Force Publish</button>
+              </div>
+            </article>
+          </section>
+
+          <section class="panel" aria-labelledby="social-title">
+            <div class="panel-head">
+              <div>
+                <h3 id="social-title">Social Drafts</h3>
+                <p>Copy, post, or send to Buffer later.</p>
+              </div>
+            </div>
+
+            <article class="draft-item">
+              <h4 class="item-title">Personal LinkedIn draft</h4>
+              <p class="item-copy">"Dave still emails the spreadsheet every Friday. He was never told that wasn't the system anymore."</p>
+              <div class="item-actions" style="margin-top: 14px;">
+                <button class="btn mini primary">Copy</button>
+                <button class="btn mini">Mark Posted</button>
+              </div>
+            </article>
+          </section>
+
+          <section class="panel" aria-labelledby="health-title">
+            <div class="panel-head">
+              <div>
+                <h3 id="health-title">Health</h3>
+                <p>The boring panel. Therefore important.</p>
+              </div>
+            </div>
+            <div class="health">
+              <div class="health-row"><span>Worker</span><strong>online</strong></div>
+              <div class="health-row"><span>Lock file</span><strong>job 148</strong></div>
+              <div class="health-row"><span>Airtable</span><strong>last ok 9m ago</strong></div>
+              <div class="health-row"><span>WordPress</span><strong>last ok May 6</strong></div>
+              <div class="health-row"><span>Stale jobs</span><strong>0</strong></div>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <nav class="mobile-tabs" aria-label="Mobile dashboard navigation">
+    <a href="#" aria-current="page">Inbox</a>
+    <a href="#write-this">Write</a>
+    <a href="#queue">Queue</a>
+    <a href="#health-title">Health</a>
+  </nav>
+</body>
+</html>
