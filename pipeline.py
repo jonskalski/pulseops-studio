@@ -36,6 +36,10 @@ DISCORD_LINKEDIN_WEBHOOK_URL = os.environ.get("DISCORD_LINKEDIN_WEBHOOK_URL")
 PEXELS_API_KEY = os.environ.get("PEXELS_API_KEY")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
+# Fallback featured image used when gpt-image-2 fails — branded PulseOps banner
+FALLBACK_MEDIA_ID = 1577
+FALLBACK_MEDIA_URL = "https://pulseops.us/wp-content/uploads/2026/05/pulseops-og-banner.png"
+
 # ── Publish Schedule ────────────────────────────────────────────────────────
 # Days to publish: 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri, 5=Sat, 6=Sun
 PUBLISH_DAYS = [0, 1, 2, 3, 4]  # Mon-Fri
@@ -552,7 +556,23 @@ def upload_image_to_wordpress(image_bytes, title, slug, alt_text=None):
         print(f"  Image upload failed: {e}")
         return None, None
 
+def slug_exists_on_wp(slug):
+    """Return True if a published or future post already uses this slug."""
+    r = requests.get(
+        f"{WP_URL}/wp-json/wp/v2/posts",
+        auth=(WP_USER, WP_APP_PASSWORD),
+        params={"slug": slug, "status": "publish,future", "_fields": "id,slug"},
+        timeout=10,
+    )
+    return bool(r.json())
+
+
 def publish_to_wordpress(post_data, keyword=None, allowed_days=None, categories=None):
+    # Guard against duplicate slugs — WordPress auto-appends -2, -3 etc. silently
+    slug = post_data.get("slug", "")
+    if slug and slug_exists_on_wp(slug):
+        raise ValueError(f"Slug already exists on WordPress: /{slug}/ — aborting to prevent duplicate post")
+
     # Fetch and upload featured image
     featured_media_id = None
     uploaded_image_url = None
@@ -563,6 +583,11 @@ def publish_to_wordpress(post_data, keyword=None, allowed_days=None, categories=
         featured_media_id, uploaded_image_url = upload_image_to_wordpress(blog_image_bytes, post_data["title"], post_data["slug"], alt_text=post_data["title"])
         if featured_media_id:
             print(f"  Blog image uploaded (ID: {featured_media_id})")
+    if not featured_media_id:
+        print(f"  ⚠ Image generation failed — using branded fallback (ID {FALLBACK_MEDIA_ID})")
+        discord_log(f"⚠️ Image generation failed for **{post_data['title']}** — branded fallback used")
+        featured_media_id = FALLBACK_MEDIA_ID
+        uploaded_image_url = None  # don't inject generic banner inline in content
 
     # Inject image into content after first paragraph.
     # Use Gutenberg block format with attachment ID so Yoast deduplicates against
