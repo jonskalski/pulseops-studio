@@ -12,6 +12,8 @@ import argparse
 import subprocess
 import time
 import requests
+import html
+import xmlrpc.client
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from pathlib import Path
@@ -400,16 +402,27 @@ def validate_and_repolish(polished, attempt_label, run_dir, approver_feedback=No
     """
     WORD_MIN, WORD_MAX = 1500, 2000
     META_MIN, META_MAX = 150, 160
+    TITLE_MAX = 60
 
     for correction in range(2):
         if not isinstance(polished, dict):
             break
-        content  = polished.get("content", "")
-        meta     = polished.get("meta_description", "")
-        words    = count_post_words(content)
-        meta_len = len(meta)
+        content   = polished.get("content", "")
+        meta      = polished.get("meta_description", "")
+        title_raw = polished.get("title", "")
+        title     = html.unescape(title_raw)
+        words     = count_post_words(content)
+        meta_len  = len(meta)
+        title_len = len(title)
 
         issues = []
+        if title_len > TITLE_MAX:
+            issues.append(
+                f"Title is {title_len} characters — must be under {TITLE_MAX}. "
+                f"Trim {title_len - TITLE_MAX} characters. Keep the keyword and the voice. "
+                f"Current title: \"{title_raw}\""
+            )
+
         if words < WORD_MIN:
             issues.append(
                 f"Word count is {words} — must be at least {WORD_MIN}. "
@@ -652,6 +665,14 @@ def publish_to_wordpress(post_data, keyword=None, allowed_days=None, categories=
         json={"meta": astra_meta},
         timeout=15,
     )
+
+    # Write Yoast meta description via XML-RPC (REST API doesn't expose Yoast fields)
+    meta_desc = post_data.get("meta_description", "")
+    if meta_desc:
+        xmlrpc_client = xmlrpc.client.ServerProxy(f"{WP_URL}/xmlrpc.php")
+        xmlrpc_client.wp.editPost(1, WP_USER, WP_APP_PASSWORD, post["id"], {
+            "custom_fields": [{"key": "_yoast_wpseo_metadesc", "value": meta_desc}]
+        })
 
     return post
 

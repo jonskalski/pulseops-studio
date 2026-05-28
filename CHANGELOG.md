@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-05-28 — Pipeline: title enforcement + Yoast meta desc write at publish
+
+### pipeline.py
+- Added `import html` and `import xmlrpc.client`
+- Added 60ch title length check to `validate_and_repolish()` — sends back for correction (up to 2 rounds) if title exceeds 60ch after HTML entity decoding; same enforcement pattern as meta description
+- Added Yoast meta description write via XML-RPC after post creation — sets `_yoast_wpseo_metadesc` field at publish time so new posts always have meta descriptions rendered in `<head>`
+
 ## 2026-05-28 — Image alt text: pipeline fix + sitewide backfill
 
 ### pipeline.py
