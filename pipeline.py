@@ -25,6 +25,7 @@ RUNS_DIR = BASE_DIR / "runs"
 RUNS_DIR.mkdir(exist_ok=True)
 
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
+GEMINI_API_KEY    = os.environ.get("GEMINI_API_KEY")
 WP_URL = os.environ.get("WP_URL", "https://pulseops.us")
 POSTS_INDEX_FILE = BASE_DIR / "published_posts_index.json"
 WP_USER = os.environ.get("WP_USER")
@@ -44,6 +45,12 @@ SKIP_DATES = [                    # "YYYY-MM-DD" dates to never publish on
     # "2026-11-27",               # Example: Thanksgiving
 ]
 # ────────────────────────────────────────────────────────────────────────────
+
+# WP category name → ID map (set up 2026-05-20)
+WP_CATEGORY_MAP = {
+    "CRM": 10602, "Sales": 10603, "Marketing": 10604, "Automation": 10605,
+    "Operations": 10606, "Tech Stack": 10607, "Spreadsheets": 10608, "Analytics": 10609,
+}
 
 # Models: use Haiku for cheap steps, Sonnet for quality steps
 HAIKU = "claude-haiku-4-5-20251001"
@@ -166,12 +173,14 @@ def count_words(html_content):
 
 
 def generate_schema_markup(post_data, pub_date_str=""):
-    """Generate JSON-LD schema. Defaults to Article, upgrades to HowTo."""
+    """Generate JSON-LD schema blocks: Article/HowTo (always) + FAQPage (if faq_items present)."""
     content = post_data.get("content", "")
     title = post_data.get("title", "")
     date_str = pub_date_str[:10] if pub_date_str else datetime.now().strftime("%Y-%m-%d")
-    schema_type = detect_schema_type(post_data)
+    faq_items = post_data.get("faq_items", [])
+    blocks = []
 
+    schema_type = detect_schema_type(post_data)
     if schema_type == "HowTo":
         steps = []
         for i, m in enumerate(
@@ -183,24 +192,41 @@ def generate_schema_markup(post_data, pub_date_str=""):
             if len(steps) >= 10:
                 break
         if steps:
-            schema = {
+            blocks.append({
                 "@context": "https://schema.org",
                 "@type": "HowTo",
                 "name": title,
                 "step": steps,
-            }
-            return f'\n<script type="application/ld+json">\n{json.dumps(schema, indent=2)}\n</script>'
+            })
 
-    # Default: Article
-    schema = {
-        "@context": "https://schema.org",
-        "@type": "Article",
-        "headline": title,
-        "author": {"@type": "Organization", "name": "PulseOps"},
-        "datePublished": date_str,
-        "publisher": {"@type": "Organization", "name": "PulseOps", "url": WP_URL},
-    }
-    return f'\n<script type="application/ld+json">\n{json.dumps(schema, indent=2)}\n</script>'
+    if not blocks:
+        blocks.append({
+            "@context": "https://schema.org",
+            "@type": "Article",
+            "headline": title,
+            "author": {"@type": "Organization", "name": "PulseOps"},
+            "datePublished": date_str,
+            "publisher": {"@type": "Organization", "name": "PulseOps", "url": WP_URL},
+        })
+
+    if faq_items:
+        blocks.append({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+                {
+                    "@type": "Question",
+                    "name": item.get("question", ""),
+                    "acceptedAnswer": {"@type": "Answer", "text": item.get("answer", "")},
+                }
+                for item in faq_items if item.get("question") and item.get("answer")
+            ],
+        })
+
+    return "".join(
+        f'\n<script type="application/ld+json">\n{json.dumps(s, indent=2)}\n</script>'
+        for s in blocks
+    )
 
 # ── Scheduling ──────────────────────────────────────────────────────────────
 
@@ -301,6 +327,45 @@ def call_claude(system_prompt, user_message, model=SONNET, max_tokens=4096):
                 print(f"  API connection error (attempt {attempt+1}/3), retrying in {wait}s...")
                 time.sleep(wait)
     raise last_exc or Exception("API failed after 3 attempts")
+
+def call_gemini_search(topic, keyword, run_dir):
+    """Use Gemini REST API with Google Search grounding for real-web research."""
+    if not GEMINI_API_KEY:
+        return ""
+    prompt = (
+        f"Research for a blog post. Topic: {topic}. Target keyword: {keyword}. "
+        f"Return bullet points covering: (1) current stats with named sources and year, "
+        f"(2) specific pain points businesses face, (3) recent trends, "
+        f"(4) concrete before/after numbers if findable. "
+        f"Name every source. No invented numbers. Bullets only, no preamble."
+    )
+    try:
+        r = requests.post(
+            f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}",
+            json={
+                "contents": [{"parts": [{"text": prompt}]}],
+                "tools": [{"google_search": {}}],
+            },
+            timeout=60,
+        )
+        r.raise_for_status()
+        data = r.json()
+        output = (
+            data.get("candidates", [{}])[0]
+            .get("content", {})
+            .get("parts", [{}])[0]
+            .get("text", "")
+            .strip()
+        )
+        if output:
+            (run_dir / "01.5_web_search.txt").write_text(output)
+            return output
+        print(f"  Gemini search empty: {data}")
+        return ""
+    except Exception as e:
+        print(f"  Gemini search failed: {e}")
+        return ""
+
 
 def extract_json(text):
     """Extract JSON from Claude response, handling markdown code blocks."""
@@ -458,7 +523,7 @@ def generate_instagram_image(title, topic):
         print(f"  gpt-image-2 Instagram image failed: {e}")
         return None
 
-def upload_image_to_wordpress(image_bytes, title, slug):
+def upload_image_to_wordpress(image_bytes, title, slug, alt_text=None):
     """Upload PNG bytes to WordPress media library. Returns (media_id, source_url)."""
     try:
         filename = f"{slug}.png"
@@ -474,12 +539,20 @@ def upload_image_to_wordpress(image_bytes, title, slug):
         )
         r.raise_for_status()
         data = r.json()
-        return data["id"], data.get("source_url", "")
+        media_id = data["id"]
+        if alt_text:
+            requests.post(
+                f"{WP_URL}/wp-json/wp/v2/media/{media_id}",
+                auth=(WP_USER, WP_APP_PASSWORD),
+                json={"alt_text": alt_text, "title": title},
+                timeout=15,
+            )
+        return media_id, data.get("source_url", "")
     except Exception as e:
         print(f"  Image upload failed: {e}")
         return None, None
 
-def publish_to_wordpress(post_data, keyword=None, allowed_days=None):
+def publish_to_wordpress(post_data, keyword=None, allowed_days=None, categories=None):
     # Fetch and upload featured image
     featured_media_id = None
     uploaded_image_url = None
@@ -487,7 +560,7 @@ def publish_to_wordpress(post_data, keyword=None, allowed_days=None):
     print(f"  Generating blog image via gpt-image-2...")
     blog_image_bytes = generate_blog_image(post_data["title"], search_term)
     if blog_image_bytes:
-        featured_media_id, uploaded_image_url = upload_image_to_wordpress(blog_image_bytes, post_data["title"], post_data["slug"])
+        featured_media_id, uploaded_image_url = upload_image_to_wordpress(blog_image_bytes, post_data["title"], post_data["slug"], alt_text=post_data["title"])
         if featured_media_id:
             print(f"  Blog image uploaded (ID: {featured_media_id})")
 
@@ -524,6 +597,10 @@ def publish_to_wordpress(post_data, keyword=None, allowed_days=None):
     }
     if featured_media_id:
         payload["featured_media"] = featured_media_id
+    if categories:
+        cat_ids = [WP_CATEGORY_MAP[c] for c in categories if c in WP_CATEGORY_MAP]
+        if cat_ids:
+            payload["categories"] = cat_ids
 
     r = requests.post(
         endpoint,
@@ -667,7 +744,8 @@ def resume_pipeline(run_dir_path):
     discord_log(f"📤 Scheduling to WordPress...")
     try:
         keyword = outline.get("target_keyword", "") if isinstance(outline, dict) else ""
-        result = publish_to_wordpress(polished, keyword=keyword, allowed_days=allowed_days)
+        cats = outline.get("categories", []) if isinstance(outline, dict) else []
+        result = publish_to_wordpress(polished, keyword=keyword, allowed_days=allowed_days, categories=cats)
         post_url = result.get("link", "unknown")
         post_id  = result.get("id", "")
         pub_date = result.get("date", "")
@@ -764,9 +842,23 @@ def run_pipeline(topic, why=None, allowed_days=None, pillar=None, cluster_id=Non
     section_list = "\n".join(f"  {i+1}. {s.get('header','?')}" for i, s in enumerate(sections))
     discord_log(f"✅ Step 1/6 — Outline complete\n**Title:** {outline.get('title', '?')}\n**Keyword:** {outline.get('target_keyword', '?')}\n**Sections:**\n{section_list}")
 
+    # ── Step 1.5: Gemini web search ──────────────────────────────────────
+    gemini_findings = ""
+    if GEMINI_API_KEY:
+        discord_log(f"⏳ Step 1.5/6 — Gemini web search...")
+        search_keyword = outline.get("target_keyword", topic) if isinstance(outline, dict) else topic
+        gemini_findings = call_gemini_search(topic, search_keyword, run_dir)
+        if gemini_findings:
+            discord_log(f"✅ Step 1.5/6 — Gemini search complete ({len(gemini_findings.split())} words)")
+        else:
+            discord_log(f"⚠️ Step 1.5/6 — Gemini search skipped or failed, continuing without it")
+
     # ── Step 2: Research ─────────────────────────────────────────────────
     discord_log(f"⏳ Step 2/6 — Research Agent running...")
-    research = run_agent("02_research", f"Outline:\n{json.dumps(outline, indent=2)}", run_dir)
+    research_input = f"Outline:\n{json.dumps(outline, indent=2)}"
+    if gemini_findings:
+        research_input += f"\n\nWeb research (Gemini + Google Search — real sources, use these stats preferentially):\n{gemini_findings}"
+    research = run_agent("02_research", research_input, run_dir)
     hook_angles = research.get("hook_angles", []) if isinstance(research, dict) else []
     pain_points = research.get("pain_points", []) if isinstance(research, dict) else []
     angle_preview = hook_angles[0][:120] if hook_angles else "none"
@@ -892,10 +984,22 @@ def run_pipeline(topic, why=None, allowed_days=None, pillar=None, cluster_id=Non
         return
 
     # ── Publish ──────────────────────────────────────────────────────────
+    # Fallback: if polished ended up as a raw string (JSON parse failure on last attempt),
+    # reload from the saved file which holds the last successfully parsed version.
+    if not isinstance(polished, dict):
+        fallback_file = run_dir / "05_polish.json"
+        if fallback_file.exists():
+            polished = json.loads(fallback_file.read_text())
+            print("  Reloaded polished from 05_polish.json (in-memory value was not a dict)")
+        else:
+            discord(f"❌ Publish aborted — polished post is not valid JSON and no 05_polish.json found")
+            return
+
     discord_log(f"📤 Scheduling to WordPress...")
     try:
         keyword = outline.get("target_keyword", "") if isinstance(outline, dict) else ""
-        result = publish_to_wordpress(polished, keyword=keyword, allowed_days=allowed_days)
+        cats = outline.get("categories", []) if isinstance(outline, dict) else []
+        result = publish_to_wordpress(polished, keyword=keyword, allowed_days=allowed_days, categories=cats)
         post_url = result.get("link", "unknown")
         post_id  = result.get("id", "")
         pub_date = result.get("date", "")

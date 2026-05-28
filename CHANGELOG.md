@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-05-28 — Image alt text: pipeline fix + sitewide backfill
+
+### pipeline.py
+- `upload_image_to_wordpress()` now accepts `alt_text` param and PATCHes the media attachment immediately after upload — all new posts get alt text set at image creation time using the post title
+
+### backfill_image_alt_text.py (new)
+- New script: audits all published posts, sets `alt_text` on media attachments where it's blank; used post title as the value; fixed 41 of 51 posts on first run
+
 ## 2026-05-07 — Control panel foundation: ticket system, job queue, worker, Linear sync
 
 ### tickets/

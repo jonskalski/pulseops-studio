@@ -146,7 +146,6 @@ def mark_cluster_published(title, wp_post_id, wp_post_url, run_id=None, cluster_
         "WP Post URL": wp_post_url,
         "Published Date": date.today().isoformat(),
     }
-    if run_id:           fields["Run ID"] = run_id
     if published_title:  fields["Published Title"] = published_title
     if keyword:          fields["Keyword"] = keyword
     if wp_slug:          fields["WP Slug"] = wp_slug

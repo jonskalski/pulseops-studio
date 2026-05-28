@@ -26,6 +26,7 @@ Review the polished post against these criteria. Be specific in your feedback �
 - Is the meta description 150-160 characters? (The pipeline measures this with len() before you see the post and auto-corrects — only fail if it's still dramatically out of range.)
 - Is the title under 60 characters?
 - Does the title use first-person framing or an emotional hook rather than a generic list format ("5 Ways to...", "10 Tips for...")? If it's a list title, FAIL and suggest a rewrite.
+- If the title uses first-person framing ("I Built X", "I Tried X", "I Switched to X"), does the post actually contain first-person experience — the author recounting what they personally did? If the post is written in second-person or as a general analysis/explainer with no first-person narrative, the title is misleading. FAIL and suggest a non-first-person rewrite.
 
 ### EEAT (Pass/Fail)
 - Does the post include at least one specific scenario with real numbers, a concrete before/after outcome, or a practitioner-level insight a generic guide would miss?

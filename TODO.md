@@ -7,13 +7,8 @@
 - [ ] Reconsider random cluster picking — writing randomly across 3 pillars means each pillar builds density slowly; consider writing 3-5 clusters per pillar in sequence so siblings exist to link to before moving on; weigh against content variety tradeoff
 - [ ] Wire sibling-aware linking into Draft agent — when --pillar is set, pass published sibling cluster URLs (not just titles) into the linking context so Draft can reference them; currently Draft only sees all published posts with no pillar weighting
 - [ ] Investigate April 12 batch failure — 7 of 11 rejected posts are from the same day; check what triggered that many runs and whether an agent change or batch queue caused the cluster
-- [x] Build rewrite trigger for "Needs Review" backlog — implemented as --resume flag in pipeline.py; reads NEEDS_REVIEW.md feedback, injects into polish attempt 1, reruns approval loop | completed: 2026-04-23 | discord_sent: true
-- [x] Fix force_publish.py rewrite_run() missing validate_and_repolish() — partially addressed; core fix is the --resume path which uses validate_and_repolish correctly | completed: 2026-04-23 | discord_sent: true
 - [ ] Monitor retry loop recovery rate — all 11 rejected posts failed all 3 attempts (0% recovery); with measurement fixes in place, track whether retry loop starts rescuing posts or if the escalation logic needs rethinking
-- [x] Fix Approver self-contradiction — Approver was reasoning out loud in comments, walking back pass/fail verdicts mid-response; updated 06_approver.md to finalize verdicts before writing output | completed: 2026-04-19 | discord_sent: false
 - [ ] Re-run published cluster posts with new voice — determine if pipeline supports updating existing WP posts (same slug/ID) vs creating new; build --rewrite flag or manual update step before batch re-run
-- [ ] Fix Draft agent word count bias — "when in doubt, write longer / a section that could be 150 words should be 200" is directly causing over-2000 word posts; change Draft target to 1,600-1,800 to leave Polish headroom below the 2,000 ceiling
-- [ ] Align Draft and Polish word count targets — Draft says 1,700-2,000, Polish says 1,700-1,900; if Draft writes to 1,950 and Polish expands anything, ceiling is breached; Draft should target lower (1,600-1,800)
 - [ ] Add explicit scenario mode ban to 03_draft.md — prompt bans named characters but never says "do not create a recurring unnamed scenario that threads across sections"; posts #7 and #11 exploited this gap; add one line: no recurring thread, every example is standalone
 - [ ] Add meta description count instruction to Draft agent — Draft outputs meta_description with only "150-160 character" in the format comment; no instruction to actually count; add explicit guidance matching Polish (pipeline measures after Polish, but Draft's starting point matters)
 - [ ] [RECURRING — WEEKLY] Review Rejected Posts table every week: pull all new rejections, find correlations in Rejection Reason, identify agent/prompt/pipeline fixes, add to TODO. Goal is 0 denials. Run this before starting any other pipeline work each week. (Future: automate as Monday cron — pull rejections, post count + top failure categories to Discord)
@@ -21,57 +16,61 @@
 - [ ] Fix force_publish.py publish_run() sends raw 05_polish.json to WordPress with no validation — force-published posts bypass all word count and meta desc checks; whatever the failed Polish produced goes live unmodified
 - [ ] Fix rewrite_run() Polish attempt 1 missing rejection feedback — line 148 passes approver_feedback=None on attempt 1; rejection reason goes to Draft but not Polish; Polish has no idea what to fix and may reproduce the same issues; rejection feedback should be passed to Polish on all attempts
 - [ ] Re-run stop-boosting-facebook-posts pipeline — resume died after 3 API timeouts during parallel recovery; run solo once API clears
-- [ ] Remove stale hardcoded internal links from 01_outline.md — 12 Excel posts listed, 7 moved to draft in March; Outline's internal_links JSON gets passed to Draft agent which could link to unpublished posts; hardcoded list is redundant since Draft already gets dynamic WP post list from pipeline
 - [ ] Address Research agent stat hallucination — agent is asked for "real, specific numbers" but has no web access; hallucinated stats pass EEAT check and get published; options: (a) strip the stats field and only ask for "what stat would help and where to find it", or (b) add a verification note in the Draft agent to flag any cited stat as unverified
 - [ ] Rethink attempt 3 escalation — currently reruns Draft from scratch, throwing away 2 rounds of polished work; most rejections are now caught by the measurement gate; attempt 3 should re-polish attempt 2's output with feedback instead of regenerating from the outline
 - [ ] Add programmatic keyword-in-title check to validate_and_repolish() in pipeline.py — compare outline target_keyword against final title, re-prompt Polish with exact fix if absent (same pattern as word count/meta gate)
 - [ ] Harden scenario mode prohibition in 03_draft.md — posts #7 and #11 drifted into threaded recurring-character scenarios despite the ban; strengthen the second-person-only instruction with explicit failure examples
-- [x] Build PulseOps Control Panel foundation — queue_db.py + queue_worker.py built (POPS-16), ticket system scaffolded (POPS-15), POPS-17/18/19 queued in Linear | completed: 2026-05-07 | discord_sent: true
-- [ ] Auto-assign WP category (CRM/Automation/Spreadsheets/Analytics) to posts at publish time in pipeline.py — needed so Start Here page on pulseops-website can eventually pull posts dynamically by bucket instead of staying hardcoded
+- [x] Auto-assign WP category to posts at publish time in pipeline.py — 8 categories created (CRM, Sales, Marketing, Automation, Operations, Tech Stack, Spreadsheets, Analytics), outline agent picks 1-3 per post, pipeline maps to IDs on publish, all 53 existing posts backfilled | completed: 2026-05-20 | discord_sent: false
 - [ ] Add Uptime Kuma pipeline monitor — create Push monitor (1440min interval) in Uptime Kuma, wire push URL into pipeline.py end-of-run
-- [x] Add Uptime Kuma bot monitor to SYSTEM.md | completed: 2026-04-09 | discord_sent: true
-- [ ] Install glow for terminal markdown rendering
+- [x] Install glow for terminal markdown rendering | completed: 2026-05-20 | discord_sent: false
 - [ ] Set up filebrowser for web-based file browsing (accessible from any device)
 - [ ] Set up AdSense account (need ~6-8 weeks of consistent publishing first)
-- [x] Run topic_picker.py end-to-end to test all 5 topics posting + pending_topics.txt dedup | completed: 2026-03-28 | discord_sent: true
-- [x] Test full pipeline with --why flag passed from Discord bot | completed: 2026-03-21 | discord_sent: true
-- [x] Create Discord #drafts channel + get webhook URL | completed: 2026-04-02 | discord_sent: true
-- [x] Create Discord #pillar-topics channel + get webhook URL | completed: 2026-04-02 | discord_sent: true
 - [ ] Provide n8n URL + API key for workflow setup
 - [ ] Set up rclone + Google Drive sync + cron (low priority — disaster recovery only)
 - [ ] Set up Google Search Console stats in morning briefing
-- [x] Wire social posting — LinkedIn agent built, pipeline wired, Airtable logging done | completed: 2026-04-12 | discord_sent: true
-- [x] Set up Discord #linkedin channel + add DISCORD_LINKEDIN_WEBHOOK_URL to .env | completed: 2026-04-29 | discord_sent: true
 - [ ] Evaluate Buffer for automated LinkedIn queue (free tier, connect PulseOps page) | POPS-11
-- [ ] Add AI-tell banned phrases to Polish agent (05_polish.md) — "Here's the thing:", "The reality is:", rule-of-three lists, overly balanced paragraphs | POPS-12
 - [ ] Wire pipeline social outputs to Buffer API once posts are flowing consistently (replaces Discord copy-paste for LinkedIn/Instagram/Bluesky)
 - [ ] Build Bluesky account and connect to pipeline (09_bluesky.md agent is ready, needs account + AT Protocol OAuth)
 - [ ] Fix SITE-8 through SITE-19 SEO/sitemap issues in WordPress (redirect sources in sitemap, Excel posts, duplicate conflict post, CTR fixes, www canonical)
 - [ ] Test full pipeline end-to-end with gpt-image-2 images + Instagram + Bluesky outputs (blocked on OpenAI org verification — ID submitted, pending review)
 - [ ] Once gpt-image-2 verified: backfill missing images on all posts published after 2026-04-29 (delegation post and any others without featured_media)
+- [ ] Build pipeline job queue — pipeline_queue.jsonl + queue_worker.py (cron every 5 min, one job at a time via lock file); cluster_writer.py enqueues instead of running directly; supports both new posts and --resume jobs; eliminates parallel API rate limiting
+- [ ] Rebuild cluster_writer.py for full pillar batch mode (write all clusters at once, enqueue in sequence)
+- [x] Install bat (syntax-highlighted terminal file viewer) | completed: 2026-05-20 | discord_sent: false
+- [ ] Add Suggested/Rejected status options to Clusters table in Airtable
+- [ ] Schedule blog pipeline cron (7am EST)
+- [ ] Build buffer system (10 evergreen safety posts, auto-refill logic)
+- [ ] Build draft review flow (WP draft → Discord notify → ✅/❌/🔁 → publish or fallback)
+- [ ] Build 8pm approval reminder (n8n)
+
+## Completed
+- [x] Fix Draft agent word count bias — "when in doubt, write longer" was causing over-2000 word posts; Draft target changed to 1,600-1,800 | completed: 2026-04-30 | discord_sent: false
+- [x] Align Draft and Polish word count targets — both now target 1,600-1,800 words | completed: 2026-04-30 | discord_sent: false
+- [x] Add AI-tell banned phrases to Polish agent (05_polish.md) — "Here's the thing:", "The reality is:", rule-of-three lists | POPS-12 | completed: 2026-04-30 | discord_sent: false
+- [x] Install gh CLI + authenticate with GitHub PAT | completed: unknown | discord_sent: false
+- [x] Remove stale hardcoded internal links from 01_outline.md — now uses generic placeholder, pipeline passes dynamic WP post list to Draft | completed: unknown | discord_sent: false
+- [x] Build rewrite trigger for "Needs Review" backlog — implemented as --resume flag in pipeline.py; reads NEEDS_REVIEW.md feedback, injects into polish attempt 1, reruns approval loop | completed: 2026-04-23 | discord_sent: true
+- [x] Fix force_publish.py rewrite_run() missing validate_and_repolish() — partially addressed; core fix is the --resume path which uses validate_and_repolish correctly | completed: 2026-04-23 | discord_sent: true
+- [x] Fix Approver self-contradiction — Approver was reasoning out loud in comments, walking back pass/fail verdicts mid-response; updated 06_approver.md to finalize verdicts before writing output | completed: 2026-04-19 | discord_sent: false
+- [x] Build PulseOps Control Panel foundation — queue_db.py + queue_worker.py built (POPS-16), ticket system scaffolded (POPS-15), POPS-17/18/19 queued in Linear | completed: 2026-05-07 | discord_sent: true
+- [x] Add Uptime Kuma bot monitor to SYSTEM.md | completed: 2026-04-09 | discord_sent: true
+- [x] Wire social posting — LinkedIn agent built, pipeline wired, Airtable logging done | completed: 2026-04-12 | discord_sent: true
+- [x] Set up Discord #linkedin channel + add DISCORD_LINKEDIN_WEBHOOK_URL to .env | completed: 2026-04-29 | discord_sent: true
+- [x] Run topic_picker.py end-to-end to test all 5 topics posting + pending_topics.txt dedup | completed: 2026-03-28 | discord_sent: true
+- [x] Test full pipeline with --why flag passed from Discord bot | completed: 2026-03-21 | discord_sent: true
+- [x] Create Discord #drafts channel + get webhook URL | completed: 2026-04-02 | discord_sent: true
+- [x] Create Discord #pillar-topics channel + get webhook URL | completed: 2026-04-02 | discord_sent: true
 - [x] Test rejected post + force publish workflow end-to-end | completed: 2026-04-12 | discord_sent: true
 - [x] Run pillar_planner.py for Local Marketing Systems + Email and Inbox Systems pillars (20 clusters each) | completed: 2026-04-20 | discord_sent: true
 - [x] Fix cluster_writer.py to randomly pick across all active pillars | completed: 2026-04-20 | discord_sent: true
 - [x] Fix Airtable cluster publish tracking — pass record ID instead of title matching | completed: 2026-04-20 | discord_sent: true
 - [x] Add 6 new fields to Clusters table (Published Title, Keyword, WP Slug, Meta Description, Schema Type, Word Count) + backfill | completed: 2026-04-20 | discord_sent: true
 - [x] Split pipeline Discord logging — #pipeline-logs for step noise, #drafts for key events only | completed: 2026-04-20 | discord_sent: true
-- [ ] Build pipeline job queue — pipeline_queue.jsonl + queue_worker.py (cron every 5 min, one job at a time via lock file); cluster_writer.py enqueues instead of running directly; supports both new posts and --resume jobs; eliminates parallel API rate limiting
-- [ ] Rebuild cluster_writer.py for full pillar batch mode (write all clusters at once, enqueue in sequence)
-- [ ] Install gh CLI + authenticate with GitHub PAT
-- [ ] Install bat (syntax-highlighted terminal file viewer)
 - [x] Install jq (JSON debugging in terminal) | completed: unknown | discord_sent: true
 - [x] Install tmux (persistent SSH sessions) | completed: unknown | discord_sent: true
 - [x] Install ufw + fail2ban (security before opening ports) | completed: 2026-04-03 | discord_sent: true
 - [x] Handle rejected posts — decide flow: Discord notify with ✅ retry / ❌ discard, or auto-retry with feedback injected, or manual queue | completed: 2026-04-02 | discord_sent: true
-- [ ] Schedule blog pipeline cron (7am EST)
-- [ ] Build buffer system (10 evergreen safety posts, auto-refill logic)
-- [ ] Build draft review flow (WP draft → Discord notify → ✅/❌/🔁 → publish or fallback)
-- [ ] Build 8pm approval reminder (n8n)
 - [x] Add Suggested Date + Published Date fields to Content Ideas, Pillars, Clusters tables in Airtable | completed: 2026-03-31 | discord_sent: true
-- [ ] Add Suggested/Rejected status options to Clusters table in Airtable
-- [x] Backfill published_posts_index.json with existing published posts | completed: 2026-04-12 | discord_sent: true
-
-## Completed
 - [x] Set up discord_bot.py as persistent systemd service (auto-restart on reboot) | completed: 2026-03-21 | discord_sent: true
 - [x] Initialize git repo for pulseops-studio, create GitHub repo (jonskalski/pulseops-studio), push | completed: 2026-03-21 | discord_sent: true
 - [x] Schedule topic_picker.py cron (3am EDT daily) | completed: 2026-03-21 | discord_sent: true
@@ -103,3 +102,4 @@
 - [x] Add CHANGELOG.md step to /summarize skill | completed: 2026-03-19 | discord_sent: true
 - [x] Add TODO.md + Discord TODO channel to /summarize skill | completed: 2026-03-19 | discord_sent: true
 - [x] Wire DISCORD_TODO_WEBHOOK_URL to settings.json | completed: 2026-03-19 | discord_sent: true
+- [x] Backfill published_posts_index.json with existing published posts | completed: 2026-04-12 | discord_sent: true

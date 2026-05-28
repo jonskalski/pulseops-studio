@@ -46,6 +46,7 @@ Return ONLY valid JSON in this exact structure:
   "title": "working title",
   "hook_concept": "one sentence describing the intro angle",
   "target_keyword": "main SEO keyword phrase",
+  "categories": ["Category1", "Category2"],
   "sections": [
     {"header": "H2 title", "description": "what this section covers"}
   ],
@@ -54,3 +55,6 @@ Return ONLY valid JSON in this exact structure:
     {"anchor_text": "suggested anchor", "url": "/slug/"}
   ]
 }
+
+For `categories`, pick 1–3 from this exact list based on the post topic:
+CRM, Sales, Marketing, Automation, Operations, Tech Stack, Spreadsheets, Analytics

@@ -49,7 +49,7 @@ When you encounter content that's too cold, add a blunt take or a dark aside. Wh
 
 ## Header Personality Check
 
-Read every H2 header. Apply the HubSpot listicle test: if this header could appear, unchanged, on a generic marketing blog with zero personality, rewrite it.
+Read every H2 and H3 header. Apply the HubSpot listicle test: if this header could appear, unchanged, on a generic marketing blog with zero personality, rewrite it.
 
 Failing examples: "Why Follow-Ups Matter", "Choosing the Right Tool", "Common Mistakes to Avoid", "Getting Started", "The Benefits of Automation"
 
@@ -85,12 +85,17 @@ Specifically:
 - Sharpen the intro hook — the first sentence must earn the second
 - Make sure the dry/sarcastic moments land (add if missing, fix if forced)
 - **Check for the required absurdist moment.** Every post must have exactly one — a comparison, image, or aside that's genuinely surreal or disproportionate, not just dry or sarcastic. If it's missing, add one. If there are two, cut the weaker one. This is a hard requirement, not a nice-to-have.
+- **The verdict test.** For every paragraph: has the author already decided something? A paragraph that describes a situation without a judgment embedded is a fail. The fix isn't a sarcastic line tacked on at the end — rewrite so the verdict is in the first sentence.
+- **The "explaining vs. recognizing" test.** Is this paragraph telling the reader about a problem, or acknowledging one they already have? If it reads like the reader needs to be informed of the situation, rewrite it to assume they're already in it. "You've been doing this wrong" lands differently than "some businesses find this approach suboptimal."
 - **Meta description:** Must be exactly 150–160 characters (the pipeline counts with `len()` after you return and will send back for corrections). Write it, then count the characters yourself before returning. Do not estimate.
 - **Word count target:** Write to 1,600–1,800 words of body content (the pipeline measures the exact count after you return and will send back for corrections if needed). If the post feels thin, expand the weakest section — add a concrete example, extend an explanation, or add a short practical sub-point. If it feels bloated, tighten the longest section first.
 - Tighten any sections that feel bloated
 - Ensure the conclusion has a real takeaway, not just a summary
 - Check all H2 headers — at least 3 must pass the HubSpot listicle test
 - Check the voice ceiling — neither too cold nor too hot
+
+## FAQ Items — Required for Schema
+After polishing, generate 3–5 FAQ items derived from the post's content. These are used for invisible JSON-LD schema only — they will NOT appear on the page. Each question should be something a reader might actually search for, answered in 1–3 concise sentences drawn from the post. No preamble, no "Great question!" — just the answer.
 
 ## Output Format
 Return ONLY valid JSON:
@@ -99,7 +104,11 @@ Return ONLY valid JSON:
   "slug": "slug",
   "meta_description": "meta description",
   "content": "full polished HTML content",
-  "polish_notes": ["list of voice/tone changes made"]
+  "polish_notes": ["list of voice/tone changes made"],
+  "faq_items": [
+    {"question": "Question text?", "answer": "Answer in 1-3 sentences."},
+    {"question": "Question text?", "answer": "Answer in 1-3 sentences."}
+  ]
 }
 
 CRITICAL: Any double quotes inside string values MUST be escaped as \" or replaced with HTML entities (&ldquo; &rdquo;).
