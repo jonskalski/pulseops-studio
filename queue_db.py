@@ -14,6 +14,16 @@ from typing import Any
 ROOT = Path(__file__).resolve().parent
 DB_PATH = ROOT / "pulseops_control.db"
 
+CREATE_RUN_EVENTS_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS run_events (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    job_id     INTEGER NOT NULL,
+    ts         TEXT NOT NULL,
+    step       TEXT NOT NULL,
+    message    TEXT NOT NULL
+)
+"""
+
 CREATE_JOBS_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS jobs (
     id                INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -66,9 +76,29 @@ def _row_to_dict(row: sqlite3.Row | None) -> dict[str, Any] | None:
 
 
 def init_db() -> None:
-    """Create the jobs table if it does not exist."""
+    """Create tables if they do not exist."""
     with _connect() as conn:
         conn.execute(CREATE_JOBS_TABLE_SQL)
+        conn.execute(CREATE_RUN_EVENTS_TABLE_SQL)
+
+
+def log_step(job_id: int, step: str, message: str) -> None:
+    """Append a step event for a running job."""
+    with _connect() as conn:
+        conn.execute(
+            "INSERT INTO run_events (job_id, ts, step, message) VALUES (?, ?, ?, ?)",
+            (job_id, utc_now_iso(), step, message),
+        )
+
+
+def get_job_events(job_id: int, after_id: int = 0) -> list[dict[str, Any]]:
+    """Return run events for a job, optionally after a given event id."""
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT * FROM run_events WHERE job_id = ? AND id > ? ORDER BY id ASC",
+            (job_id, after_id),
+        ).fetchall()
+    return [dict(row) for row in rows]
 
 
 def enqueue_job(

@@ -101,6 +101,7 @@
     .panel-head h3 { margin: 0; font-size: 14px; letter-spacing: 0.12em; text-transform: uppercase; }
     .panel-head p { margin: 4px 0 0; color: var(--faint); font-size: 13px; text-transform: none; letter-spacing: 0; }
     .link { color: var(--accent); font-size: 13px; font-weight: 800; text-decoration: none; }
+    .cal-date-header { padding: 10px 20px 4px; color: var(--accent); font-size: 11px; font-weight: 800; letter-spacing: 0.13em; text-transform: uppercase; border-bottom: 1px solid var(--border-soft); }
 
     .inbox-item, .queue-item, .draft-item { padding: 18px 20px; border-bottom: 1px solid var(--border-soft); }
     .inbox-item:last-child, .queue-item:last-child, .draft-item:last-child { border-bottom: 0; }
@@ -190,6 +191,8 @@
       <nav class="nav">
         <a href="/inbox" class="{{ 'active' if active == 'inbox' }}">Inbox</a>
         <a href="/write-this" class="{{ 'active' if active == 'write-this' }}">Write This</a>
+        <a href="/calendar" class="{{ 'active' if active == 'calendar' }}">Calendar</a>
+        <a href="/posts" class="{{ 'active' if active == 'posts' }}">Posts</a>
         <a href="/queue" class="{{ 'active' if active == 'queue' }}">Queue</a>
         <a href="/runs" class="{{ 'active' if active == 'runs' }}">Runs</a>
         <a href="/rejected" class="{{ 'active' if active == 'rejected' }}">Rejected</a>
@@ -213,9 +216,9 @@
   <nav class="mobile-tabs" aria-label="Mobile navigation">
     <a href="/inbox" class="{{ 'active' if active == 'inbox' }}">Inbox</a>
     <a href="/write-this" class="{{ 'active' if active == 'write-this' }}">Write</a>
+    <a href="/calendar" class="{{ 'active' if active == 'calendar' }}">Cal</a>
+    <a href="/posts" class="{{ 'active' if active == 'posts' }}">Posts</a>
     <a href="/queue" class="{{ 'active' if active == 'queue' }}">Queue</a>
-    <a href="/runs" class="{{ 'active' if active == 'runs' }}">Runs</a>
-    <a href="/health" class="{{ 'active' if active == 'health' }}">Health</a>
   </nav>
 
   <script>

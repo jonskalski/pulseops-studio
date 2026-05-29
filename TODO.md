@@ -4,9 +4,9 @@
 - [ ] LinkedIn Developer App setup (POPS-25) — human action required; blocks all of LinkedInv1 (POPS-25 through POPS-34)
 - [ ] LinkedIn OAuth flow (POPS-26) — build linkedin_auth.py after app is created
 - [ ] [CONTROL PANEL] Migrate ticket workflow to Linear — use Linear as source of truth (ticket description = plan.md, comments = Q&A thread), files as execution layer; plan once control panel build is proven to work
-- [ ] Control Panel: Run Log — add run_events SQLite table, wire pipeline.py to log steps, display in dashboard (next session)
-- [ ] Control Panel: Calendar — WordPress scheduled posts view with date reassignment
-- [ ] Control Panel: Post Viewer — read-only blog + social copy per post with veto/regenerate button
+- [x] Control Panel: Run Log — run_events SQLite table, live polling, collapsible history | completed: 2026-05-29 | discord_sent: false
+- [x] Control Panel: Calendar — WordPress scheduled posts, date reassignment tested end-to-end | completed: 2026-05-29 | discord_sent: false
+- [x] Control Panel: Post Viewer — platform-styled social cards (LinkedIn/Instagram/Bluesky), Instagram image preview, regenerate button | completed: 2026-05-29 | discord_sent: false
 - [ ] Control Panel: migrate cluster_writer.py and discord_bot.py topic approvals to enqueue through worker (Phase 4)
 - [ ] POPS-35: Re-add FAQ generation to 03_draft.md + FAQPage schema in pipeline.py (details/summary format)
 - [ ] Build pillar hub pages — one long-form "Complete Guide to X" page per active pillar (CRMs, Local Marketing, Email); each cluster links back to it, hub links out to all clusters; needed before interlinking is meaningful

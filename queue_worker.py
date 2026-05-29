@@ -233,12 +233,16 @@ def run_command(
         log_file.write("\n--- output ---\n")
         log_file.flush()
 
+        env = os.environ.copy()
+        env["PULSEOPS_JOB_ID"] = str(job["id"])
+
         process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             bufsize=0,
             cwd=str(ROOT),
+            env=env,
         )
 
         timed_out = False

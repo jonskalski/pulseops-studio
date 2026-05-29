@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-05-29 — Control Panel V1 feature-complete
+
+### Run Log
+- `queue_db.py`: added `run_events` table + `log_step()` + `get_job_events()`
+- `queue_worker.py`: passes `PULSEOPS_JOB_ID` env var to subprocesses
+- `pipeline.py`: `discord_log()` now also writes to SQLite `run_events` when `PULSEOPS_JOB_ID` set
+- `dashboard/app.py`: `/api/job/<id>/events` endpoint for polling
+- `runs.html`: live 3s polling for running jobs, collapsible log for completed jobs
+- `queue.html`: live polling for active jobs
+
+### Calendar
+- `dashboard/app.py`: `_get_scheduled_posts()` + `_reschedule_wp_post()` helpers, `/api/post/<id>/reschedule` route
+- `calendar.html`: posts grouped by date, inline date picker, PATCH to WP REST API on save
+- Tested end-to-end: June 3 confirmed in WordPress
+
+### Post Viewer
+- `dashboard/app.py`: `_get_published_posts_with_socials()` scans run folders, matches by WP post ID, `/api/run-image/` serves Instagram images securely, `/api/post/<id>/regenerate` queues new run
+- `posts.html`: platform-styled cards — LinkedIn (brand + personal), Instagram (with image), Bluesky; copy buttons per variant
+- Instagram `caption` key fix (was `post` key)
+
 ## 2026-05-29 — Control Panel V1 launched
 
 ### dashboard/ (new)

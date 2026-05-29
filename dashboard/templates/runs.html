@@ -8,46 +8,69 @@
     <h2>Runs</h2>
     <p>Everything the worker has executed. Stuck runs can be resumed.</p>
   </div>
+  <div class="actions">
+    <button class="btn" onclick="location.reload()">Refresh</button>
+  </div>
 </header>
 
 <div class="panel">
   <div class="panel-head">
     <div>
       <h3>All Jobs</h3>
-      <p>Last 50 runs across all job types.</p>
+      <p>Last 50 runs. Running jobs stream live.</p>
     </div>
   </div>
 
   {% if jobs %}
     {% for job in jobs %}
-    <article class="queue-item {% if job.status == 'running' %}running{% endif %}">
+    <article class="queue-item {% if job.status == 'running' %}running{% endif %}" id="job-{{ job.id }}">
       <div class="row">
         <div style="flex:1;min-width:0;">
           <h4 class="item-title">{{ job.label or job.job_type }}</h4>
           <p class="item-copy">
             {{ job.job_type }}
-            {% if job.queued_at %} &mdash; {{ job.queued_at[:16] }}{% endif %}
-            {% if job.duration_seconds %} &mdash; {{ job.duration_seconds }}s{% endif %}
+            {% if job.queued_at %}&mdash; {{ job.queued_at[:16] }}{% endif %}
           </p>
           <div class="pills" style="margin-top:8px;">
             {% if job.status == 'succeeded' %}
               <span class="pill good">succeeded</span>
+              {% if job.result_url %}<a class="pill good" href="{{ job.result_url }}" target="_blank">view post</a>{% endif %}
             {% elif job.status == 'running' %}
               <span class="pill warn">running</span>
             {% elif job.status == 'failed' %}
               <span class="pill bad">failed</span>
+            {% elif job.status == 'blocked' %}
+              <span class="pill bad">needs review</span>
             {% elif job.status == 'queued' %}
               <span class="pill">queued</span>
             {% elif job.status == 'cancelled' %}
               <span class="pill">cancelled</span>
+            {% elif job.status == 'stale' %}
+              <span class="pill bad">stale</span>
             {% else %}
               <span class="pill">{{ job.status }}</span>
             {% endif %}
           </div>
+
+          <!-- Live log for running jobs -->
+          {% if job.status == 'running' %}
+          <div class="log" id="log-{{ job.id }}" style="margin-top:14px;">Waiting for first step...</div>
+          {% endif %}
+
+          <!-- Collapsible log for completed/failed jobs -->
+          {% if job.status in ['succeeded', 'failed', 'blocked', 'stale'] %}
+          <details style="margin-top:12px;">
+            <summary style="cursor:pointer;color:var(--faint);font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">View log</summary>
+            <div class="log" id="log-{{ job.id }}" style="margin-top:8px;">Loading...</div>
+          </details>
+          {% endif %}
         </div>
+
         <div class="item-actions">
-          {% if job.status in ['failed', 'running'] %}
+          {% if job.status in ['failed', 'stale', 'blocked'] %}
             <button class="btn mini primary" onclick="resumeRun({{ job.id }}, this)">Resume</button>
+          {% elif job.status == 'queued' %}
+            <button class="btn mini danger" onclick="cancelJob({{ job.id }}, this)">Cancel</button>
           {% endif %}
         </div>
       </div>
@@ -61,6 +84,70 @@
 
 {% block scripts %}
 <script>
+  // Poll running jobs
+  const runningJobs = {{ jobs | selectattr('status', 'equalto', 'running') | map(attribute='id') | list | tojson }};
+  const cursors = {};
+
+  function appendEvents(jobId, events) {
+    const el = document.getElementById('log-' + jobId);
+    if (!el) return;
+    events.forEach(e => {
+      el.textContent += '[' + e.ts.substring(11, 19) + '] ' + e.message + '\n';
+    });
+    el.scrollTop = el.scrollHeight;
+  }
+
+  async function pollJob(jobId) {
+    const after = cursors[jobId] || 0;
+    try {
+      const r = await fetch('/api/job/' + jobId + '/events?after=' + after);
+      const data = await r.json();
+      if (data.events && data.events.length > 0) {
+        appendEvents(jobId, data.events);
+        cursors[jobId] = data.events[data.events.length - 1].id;
+      }
+      if (data.job_status === 'running') {
+        setTimeout(() => pollJob(jobId), 3000);
+      } else if (data.job_status !== 'queued') {
+        // Job finished — update pill
+        const article = document.getElementById('job-' + jobId);
+        if (article) {
+          article.classList.remove('running');
+          const pill = article.querySelector('.pill.warn');
+          if (pill) {
+            pill.className = data.job_status === 'succeeded' ? 'pill good' : 'pill bad';
+            pill.textContent = data.job_status;
+          }
+        }
+      }
+    } catch(e) {
+      setTimeout(() => pollJob(jobId), 5000);
+    }
+  }
+
+  // Load log for completed jobs on details open
+  document.querySelectorAll('details').forEach(det => {
+    det.addEventListener('toggle', function() {
+      if (!this.open) return;
+      const logEl = this.querySelector('.log');
+      if (!logEl || logEl.dataset.loaded) return;
+      const jobId = logEl.id.replace('log-', '');
+      fetch('/api/job/' + jobId + '/events?after=0').then(r => r.json()).then(data => {
+        if (data.events && data.events.length > 0) {
+          logEl.textContent = data.events.map(e =>
+            '[' + e.ts.substring(11, 19) + '] ' + e.message
+          ).join('\n');
+        } else {
+          logEl.textContent = 'No step events recorded for this run.';
+        }
+        logEl.dataset.loaded = '1';
+      });
+    });
+  });
+
+  // Start polling all running jobs
+  runningJobs.forEach(id => pollJob(id));
+
   async function resumeRun(jobId, btn) {
     btn.disabled = true;
     btn.textContent = 'Queuing...';
@@ -71,6 +158,19 @@
     } else {
       btn.disabled = false;
       btn.textContent = 'Resume';
+      toast('Error: ' + res.error, 'error');
+    }
+  }
+
+  async function cancelJob(jobId, btn) {
+    if (!confirm('Cancel this job?')) return;
+    btn.disabled = true;
+    const res = await api('/api/job/' + jobId + '/cancel', {});
+    if (res.ok) {
+      toast('Job cancelled.', 'success');
+      setTimeout(() => location.reload(), 800);
+    } else {
+      btn.disabled = false;
       toast('Error: ' + res.error, 'error');
     }
   }

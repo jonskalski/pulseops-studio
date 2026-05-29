@@ -291,11 +291,18 @@ def discord(msg):
     if DISCORD_WEBHOOK_URL:
         _post_webhook(DISCORD_WEBHOOK_URL, msg)
 
-def discord_log(msg):
-    """Post a step-level progress update to #pipeline-logs (falls back to #drafts)."""
+def discord_log(msg, step=None):
+    """Post a step-level progress update to #pipeline-logs and to SQLite run_events."""
     url = DISCORD_PIPELINE_LOG_URL or DISCORD_WEBHOOK_URL
     if url:
         _post_webhook(url, msg)
+    job_id_str = os.environ.get("PULSEOPS_JOB_ID")
+    if job_id_str:
+        try:
+            import queue_db as _qdb
+            _qdb.log_step(int(job_id_str), step or "step", msg)
+        except Exception:
+            pass
 
 def call_claude(system_prompt, user_message, model=SONNET, max_tokens=4096):
     headers = {

@@ -37,8 +37,8 @@
             {% if job.queued_at %} &mdash; queued {{ job.queued_at[:16] }}{% endif %}
             {% if job.started_at %} &mdash; started {{ job.started_at[:16] }}{% endif %}
           </p>
-          {% if job.status == 'running' and job.log_path %}
-          <div class="log" id="log-{{ job.id }}">Loading log...</div>
+          {% if job.status == 'running' %}
+          <div class="log" id="log-{{ job.id }}" style="margin-top:14px;">Waiting for first step...</div>
           {% endif %}
         </div>
         <div class="item-actions">
@@ -59,6 +59,32 @@
 
 {% block scripts %}
 <script>
+  const runningJobs = {{ jobs | selectattr('status', 'equalto', 'running') | map(attribute='id') | list | tojson }};
+  const cursors = {};
+
+  async function pollJob(jobId) {
+    const after = cursors[jobId] || 0;
+    try {
+      const r = await fetch('/api/job/' + jobId + '/events?after=' + after);
+      const data = await r.json();
+      if (data.events && data.events.length > 0) {
+        const el = document.getElementById('log-' + jobId);
+        data.events.forEach(e => {
+          el.textContent += '[' + e.ts.substring(11,19) + '] ' + e.message + '\n';
+        });
+        el.scrollTop = el.scrollHeight;
+        cursors[jobId] = data.events[data.events.length - 1].id;
+      }
+      if (data.job_status === 'running' || data.job_status === 'queued') {
+        setTimeout(() => pollJob(jobId), 3000);
+      }
+    } catch(e) {
+      setTimeout(() => pollJob(jobId), 5000);
+    }
+  }
+
+  runningJobs.forEach(id => pollJob(id));
+
   async function cancelJob(jobId, btn) {
     if (!confirm('Cancel this job?')) return;
     btn.disabled = true;

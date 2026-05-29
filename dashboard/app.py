@@ -1,4 +1,6 @@
 import os
+import json
+import re
 import sys
 from functools import wraps
 from datetime import datetime, timezone
@@ -79,6 +81,22 @@ def runs():
 def write_this():
     metrics = _get_metrics()
     return render_template("write_this.html", metrics=metrics, active="write-this")
+
+
+@app.route("/calendar")
+@login_required
+def calendar():
+    posts = _get_scheduled_posts()
+    metrics = _get_metrics()
+    return render_template("calendar.html", posts=posts, metrics=metrics, active="calendar")
+
+
+@app.route("/posts")
+@login_required
+def posts():
+    posts = _get_published_posts_with_socials()
+    metrics = _get_metrics()
+    return render_template("posts.html", posts=posts, metrics=metrics, active="posts")
 
 
 @app.route("/rejected")
@@ -168,6 +186,18 @@ def api_write_this():
     return jsonify({"ok": True, "job_id": job_id})
 
 
+@app.route("/api/job/<int:job_id>/events")
+@login_required
+def api_job_events(job_id):
+    after_id = request.args.get("after", 0, type=int)
+    events = queue_db.get_job_events(job_id, after_id=after_id)
+    job = queue_db.get_job(job_id)
+    return jsonify({
+        "events": events,
+        "job_status": job["status"] if job else "unknown",
+    })
+
+
 @app.route("/api/job/<int:job_id>/cancel", methods=["POST"])
 @login_required
 def api_job_cancel(job_id):
@@ -210,7 +240,71 @@ def api_force_publish(record_id):
     return jsonify({"ok": True, "job_id": job_id})
 
 
+@app.route("/api/post/<int:post_id>/regenerate", methods=["POST"])
+@login_required
+def api_regenerate(post_id):
+    data = request.get_json(silent=True) or {}
+    topic = data.get("topic", "").strip()
+    if not topic:
+        return jsonify({"ok": False, "error": "topic required"}), 400
+    cmd = ["python3", "/root/pulseops-studio/pipeline.py", topic]
+    job_id = queue_db.enqueue_job(
+        command=cmd,
+        job_type="pipeline_topic",
+        label=f"Regenerate: {topic}",
+        meta={"source": "post_viewer", "post_id": post_id},
+    )
+    return jsonify({"ok": True, "job_id": job_id})
+
+
+@app.route("/api/run-image/<path:rel_path>")
+@login_required
+def api_run_image(rel_path):
+    from flask import send_file, abort
+    import pathlib
+    runs_root = pathlib.Path("/root/pulseops-studio/runs").resolve()
+    target = (runs_root / rel_path).resolve()
+    if not str(target).startswith(str(runs_root)):
+        abort(403)
+    if target.suffix.lower() not in (".png", ".jpg", ".jpeg", ".webp"):
+        abort(403)
+    if not target.exists():
+        abort(404)
+    return send_file(target, mimetype="image/png")
+
+
+@app.route("/api/post/<int:post_id>/reschedule", methods=["POST"])
+@login_required
+def api_reschedule(post_id):
+    data = request.get_json(silent=True) or {}
+    date_value = data.get("date") or ""
+    if not isinstance(date_value, str):
+        return jsonify({"ok": False, "error": "valid date required"}), 400
+    new_date = date_value.strip()
+    if not new_date:
+        return jsonify({"ok": False, "error": "date required"}), 400
+    try:
+        parsed_date = datetime.strptime(new_date, "%Y-%m-%d")
+        if parsed_date.strftime("%Y-%m-%d") != new_date:
+            raise ValueError()
+    except ValueError:
+        return jsonify({"ok": False, "error": "valid date required"}), 400
+    try:
+        _reschedule_wp_post(post_id, new_date)
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
 # --- Data helpers ---
+
+@app.template_filter("humandate")
+def humandate_filter(d):
+    try:
+        return datetime.strptime(d, "%Y-%m-%d").strftime("%A, %b %-d")
+    except (TypeError, ValueError):
+        return d
+
 
 def _get_inbox_topics():
     try:
@@ -251,6 +345,123 @@ def _get_rejected_posts():
         return posts
     except Exception:
         return []
+
+
+def _get_scheduled_posts():
+    """Fetch scheduled (future) posts from WordPress REST API."""
+    import html
+    import requests as req
+    r = req.get(
+        os.environ["WP_URL"] + "/wp-json/wp/v2/posts",
+        params={
+            "status": "future",
+            "per_page": 30,
+            "_fields": "id,title,slug,date,link,categories",
+            "orderby": "date",
+            "order": "asc",
+        },
+        auth=(os.environ["WP_USER"], os.environ["WP_APP_PASSWORD"]),
+        timeout=10,
+    )
+    r.raise_for_status()
+    posts = []
+    for p in r.json():
+        posts.append({
+            "id": p["id"],
+            "title": html.unescape(p["title"]["rendered"]),
+            "slug": p["slug"],
+            "date": p["date"][:10],
+            "time": p["date"][11:16],
+            "link": p.get("link", ""),
+        })
+    return posts
+
+
+def _get_published_posts_with_socials():
+    """Fetch published WP posts and match each to its run folder social copy."""
+    import requests as req
+    import html as html_module
+    from pathlib import Path
+
+    # Build run folder index: wp_post_id (int) -> run_dir Path
+    runs_dir = Path("/root/pulseops-studio/runs")
+    run_index = {}
+    if runs_dir.exists():
+        for run_dir in sorted(runs_dir.iterdir(), reverse=True):
+            pub = run_dir / "published.json"
+            if pub.exists():
+                try:
+                    d = json.loads(pub.read_text())
+                    wp_id = d.get("id")
+                    if wp_id and int(wp_id) not in run_index:
+                        run_index[int(wp_id)] = run_dir
+                except Exception:
+                    pass
+
+    # Fetch published posts from WP
+    r = req.get(
+        os.environ["WP_URL"] + "/wp-json/wp/v2/posts",
+        params={
+            "status": "future",
+            "per_page": 20,
+            "_fields": "id,title,slug,date,link",
+            "orderby": "date",
+            "order": "asc",
+        },
+        auth=(os.environ["WP_USER"], os.environ["WP_APP_PASSWORD"]),
+        timeout=10,
+    )
+    r.raise_for_status()
+
+    posts = []
+    for p in r.json():
+        post_id = p["id"]
+        run_dir = run_index.get(post_id)
+
+        socials = {}
+        if run_dir:
+            for key, filename in [
+                ("linkedin_brand", "07_linkedin.json"),
+                ("instagram", "08_instagram.json"),
+                ("bluesky", "09_bluesky.json"),
+                ("linkedin_personal", "10_personal_linkedin.json"),
+            ]:
+                f = run_dir / filename
+                if f.exists():
+                    try:
+                        d = json.loads(f.read_text())
+                        raw = d.get("post", "") or d.get("caption", "")
+                        # Strip markdown code fences if present
+                        raw = re.sub(r'^```[a-z]*\n?', '', raw, flags=re.MULTILINE)
+                        raw = re.sub(r'\n?```$', '', raw, flags=re.MULTILINE)
+                        # Strip inner JSON wrapper if present (some agents wrap in {"post": ...})
+                        try:
+                            inner = json.loads(raw.strip())
+                            if isinstance(inner, dict) and "post" in inner:
+                                raw = inner["post"]
+                        except Exception:
+                            pass
+                        socials[key] = raw.strip()
+                    except Exception:
+                        pass
+
+        instagram_image_url = None
+        if run_dir and (run_dir / "instagram.png").exists():
+            rel = (run_dir / "instagram.png").relative_to(Path("/root/pulseops-studio/runs"))
+            instagram_image_url = f"/api/run-image/{rel}"
+
+        posts.append({
+            "id": post_id,
+            "title": html_module.unescape(p["title"]["rendered"]),
+            "slug": p["slug"],
+            "date": p["date"][:10],
+            "link": p.get("link", ""),
+            "socials": socials,
+            "has_socials": bool(socials),
+            "instagram_image_url": instagram_image_url,
+        })
+
+    return posts
 
 
 def _get_metrics():
@@ -333,6 +544,19 @@ def _wait_airtable_topic(record_id):
     api = Api(os.environ["AIRTABLE_API_KEY"])
     table = api.table(os.environ["AIRTABLE_BASE_ID"], os.environ["AIRTABLE_CONTENT_IDEAS_TABLE_ID"])
     table.update(record_id, {"Status": "On Hold"})
+
+
+def _reschedule_wp_post(post_id: int, new_date: str):
+    """Update a WordPress post's scheduled date. new_date is YYYY-MM-DD."""
+    import requests as req
+    new_datetime = new_date + "T09:00:00"
+    r = req.post(
+        os.environ["WP_URL"] + f"/wp-json/wp/v2/posts/{post_id}",
+        json={"date": new_datetime, "status": "future"},
+        auth=(os.environ["WP_USER"], os.environ["WP_APP_PASSWORD"]),
+        timeout=10,
+    )
+    r.raise_for_status()
 
 
 if __name__ == "__main__":

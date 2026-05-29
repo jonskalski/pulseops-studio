@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}Calendar — PulseOps Studio{% endblock %}
+
+{% block content %}
+<header class="topbar">
+  <div>
+    <p class="kicker">Publishing schedule</p>
+    <h2>Calendar</h2>
+    <p>What's scheduled for the next two weeks.</p>
+  </div>
+</header>
+
+<section class="metrics" aria-label="System summary">
+  <div class="metric"><span>Queued</span><strong>{{ metrics.queued }}</strong></div>
+  <div class="metric"><span>Scheduled</span><strong>{{ posts|length }}</strong></div>
+  <div class="metric"><span>Running</span><strong {% if metrics.running %}class="warn"{% endif %}>{{ metrics.running }}</strong></div>
+  <div class="metric"><span>Needs review</span><strong {% if metrics.needs_review %}class="bad"{% endif %}>{{ metrics.needs_review }}</strong></div>
+</section>
+
+<div class="panel" id="calendar-panel">
+  <div class="panel-head">
+    <div>
+      <h3>Scheduled Posts</h3>
+      <p>Future WordPress posts ordered by publish date.</p>
+    </div>
+  </div>
+
+  {% if posts %}
+    <div id="calendar-list">
+      {% for date, day_posts in posts | groupby('date') %}
+      <section data-date-group="{{ date }}">
+        <div class="cal-date-header" data-date-label>{{ date|humandate }}</div>
+        <div data-day-posts>
+          {% for post in day_posts %}
+          <article class="inbox-item" data-post-id="{{ post.id }}" data-post-date="{{ post.date }}">
+            <div class="row">
+              <div style="flex:1;min-width:0;">
+                <h4 class="item-title">{{ post.title|striptags }}</h4>
+                <p class="item-copy">Scheduled for <span data-date-pill>{{ post.date|humandate }}</span></p>
+                <div class="pills">
+                  <span class="pill">{{ post.slug }}</span>
+                  {% set hour = post.time[:2]|int %}
+                  {% set minute = post.time[3:5] %}
+                  <span class="pill" data-time-pill>{{ 12 if hour % 12 == 0 else hour % 12 }}:{{ minute }} {{ 'AM' if hour < 12 else 'PM' }}</span>
+                </div>
+              </div>
+              <div class="item-actions">
+                <button class="btn mini" onclick="showReschedule({{ post.id }}, this)">Reschedule</button>
+                <div class="field" data-reschedule-picker style="display:none;min-width:170px;">
+                  <label for="date-{{ post.id }}">New date</label>
+                  <input id="date-{{ post.id }}" type="date" value="{{ post.date }}">
+                  <button class="btn mini primary" onclick="saveReschedule({{ post.id }}, this)">Save</button>
+                </div>
+              </div>
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">No scheduled WordPress posts found.</div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function findPost(postId) {
+    return document.querySelector('[data-post-id="' + postId + '"]');
+  }
+
+  function humanDate(dateValue) {
+    const parts = dateValue.split('-').map(Number);
+    if (parts.length !== 3 || parts.some(Number.isNaN)) return dateValue;
+    const date = new Date(parts[0], parts[1] - 1, parts[2]);
+    return date.toLocaleDateString(undefined, {weekday: 'long', month: 'short', day: 'numeric'});
+  }
+
+  function showReschedule(postId, btn) {
+    const post = findPost(postId);
+    const picker = post.querySelector('[data-reschedule-picker]');
+    picker.style.display = picker.style.display === 'none' ? 'grid' : 'none';
+    if (picker.style.display !== 'none') {
+      picker.querySelector('input').focus();
+    }
+  }
+
+  function ensureDateGroup(dateValue) {
+    const list = document.getElementById('calendar-list');
+    let group = list.querySelector('[data-date-group="' + dateValue + '"]');
+    if (group) return group;
+
+    group = document.createElement('section');
+    group.dataset.dateGroup = dateValue;
+
+    const header = document.createElement('div');
+    header.className = 'cal-date-header';
+    header.dataset.dateLabel = '';
+    header.textContent = humanDate(dateValue);
+    group.appendChild(header);
+
+    const posts = document.createElement('div');
+    posts.dataset.dayPosts = '';
+    group.appendChild(posts);
+
+    const groups = Array.from(list.querySelectorAll('[data-date-group]'));
+    const nextGroup = groups.find(existing => existing.dataset.dateGroup > dateValue);
+    list.insertBefore(group, nextGroup || null);
+    return group;
+  }
+
+  function removeEmptyGroup(group) {
+    if (group && !group.querySelector('[data-day-posts] article')) {
+      group.remove();
+    }
+  }
+
+  function movePostToDate(post, dateValue) {
+    const oldGroup = post.closest('[data-date-group]');
+    const newGroup = ensureDateGroup(dateValue);
+    newGroup.querySelector('[data-day-posts]').appendChild(post);
+    removeEmptyGroup(oldGroup);
+  }
+
+  async function saveReschedule(postId, btn) {
+    const post = findPost(postId);
+    const picker = post.querySelector('[data-reschedule-picker]');
+    const input = picker.querySelector('input');
+    const newDate = input.value;
+    if (!newDate) {
+      toast('Choose a date first.', 'error');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+    const res = await api('/api/post/' + postId + '/reschedule', {date: newDate});
+    if (res.ok) {
+      post.dataset.postDate = newDate;
+      post.querySelector('[data-date-pill]').textContent = humanDate(newDate);
+      post.querySelector('[data-time-pill]').textContent = '9:00 AM';
+      picker.style.display = 'none';
+      movePostToDate(post, newDate);
+      toast('Post rescheduled.', 'success');
+    } else {
+      toast('Error: ' + res.error, 'error');
+    }
+    btn.disabled = false;
+    btn.textContent = 'Save';
+  }
+</script>
+{% endblock %}
