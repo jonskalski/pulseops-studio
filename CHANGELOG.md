@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-05-29 — Control Panel V1 launched
+
+### dashboard/ (new)
+- Flask app scaffolded at `/root/pulseops-studio/dashboard/`
+- `app.py`: login/session auth, inbox, queue, runs, write-this, rejected, health routes + API endpoints for approve/deny/wait/cancel/resume/force-publish
+- `templates/`: base.html (full mockup CSS), login.html, inbox.html, queue.html, runs.html, write_this.html, rejected.html, health.html
+- Inbox wired to Airtable Content Ideas (Status=Suggested), sorted descending by Suggested Date
+
+### Infrastructure
+- `studio-proxy` nginx container added to docker-compose.yml (routes `studio.skalski.cloud` → host:5050)
+- DNS A record for `studio.skalski.cloud` added via Hostinger API
+- UFW port 5050 opened
+- `pulseops-dashboard.service` systemd unit created and enabled
+- Dashboard live at https://studio.skalski.cloud
+
+### SPEC-control-panel.md (new)
+- Full product spec for control panel: problem, goal, audience, stack, integrations, scope, MVP, open questions, risks
+
+### Linear
+- POPS-35 created: FAQ section re-add to pipeline + FAQPage schema
+
 ## 2026-05-29 — cluster_writer.py fix + Airtable backfill
 
 ### cluster_writer.py

@@ -4,6 +4,11 @@
 - [ ] LinkedIn Developer App setup (POPS-25) — human action required; blocks all of LinkedInv1 (POPS-25 through POPS-34)
 - [ ] LinkedIn OAuth flow (POPS-26) — build linkedin_auth.py after app is created
 - [ ] [CONTROL PANEL] Migrate ticket workflow to Linear — use Linear as source of truth (ticket description = plan.md, comments = Q&A thread), files as execution layer; plan once control panel build is proven to work
+- [ ] Control Panel: Run Log — add run_events SQLite table, wire pipeline.py to log steps, display in dashboard (next session)
+- [ ] Control Panel: Calendar — WordPress scheduled posts view with date reassignment
+- [ ] Control Panel: Post Viewer — read-only blog + social copy per post with veto/regenerate button
+- [ ] Control Panel: migrate cluster_writer.py and discord_bot.py topic approvals to enqueue through worker (Phase 4)
+- [ ] POPS-35: Re-add FAQ generation to 03_draft.md + FAQPage schema in pipeline.py (details/summary format)
 - [ ] Build pillar hub pages — one long-form "Complete Guide to X" page per active pillar (CRMs, Local Marketing, Email); each cluster links back to it, hub links out to all clusters; needed before interlinking is meaningful
 - [ ] Build retroactive sibling linker — script that pulls all Published clusters per pillar, updates each WP post via REST API to add 1-2 links to sibling clusters; run once a pillar hits 5+ published posts
 - [ ] Reconsider random cluster picking — writing randomly across 3 pillars means each pillar builds density slowly; consider writing 3-5 clusters per pillar in sequence so siblings exist to link to before moving on; weigh against content variety tradeoff

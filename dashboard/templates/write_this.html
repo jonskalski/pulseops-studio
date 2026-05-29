@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Write This — PulseOps Studio{% endblock %}
+
+{% block content %}
+<header class="topbar">
+  <div>
+    <p class="kicker">Fast lane</p>
+    <h2>Write This</h2>
+    <p>Drop a topic or URL. Fires immediately as a pipeline job. No inbox. No waiting.</p>
+  </div>
+</header>
+
+<div style="max-width:600px;">
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <h3>New job</h3>
+        <p>Replaces dropping a topic into Discord #write-this.</p>
+      </div>
+    </div>
+
+    <form class="compose" id="write-form">
+      <div class="field">
+        <label for="topic">Topic or URL</label>
+        <textarea id="topic" name="topic" rows="4" placeholder="Paste a topic, article URL, or rough idea. The worker handles the rest."></textarea>
+      </div>
+      <div class="field">
+        <label for="why">Context (optional)</label>
+        <input id="why" name="why" type="text" placeholder="Why this matters, if there's a reason">
+      </div>
+      <button class="btn primary" type="submit" id="submit-btn">Create Job</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.getElementById('write-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const topic = document.getElementById('topic').value.trim();
+    const why = document.getElementById('why').value.trim();
+    if (!topic) { toast('Topic is required.', 'error'); return; }
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Queuing...';
+
+    const res = await api('/api/write-this', {topic, why});
+    if (res.ok) {
+      toast('Job queued. Worker will pick it up shortly.', 'success');
+      document.getElementById('topic').value = '';
+      document.getElementById('why').value = '';
+      btn.disabled = false;
+      btn.textContent = 'Create Job';
+    } else {
+      toast('Error: ' + res.error, 'error');
+      btn.disabled = false;
+      btn.textContent = 'Create Job';
+    }
+  });
+</script>
+{% endblock %}

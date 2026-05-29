@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Queue — PulseOps Studio{% endblock %}
+
+{% block content %}
+<header class="topbar">
+  <div>
+    <p class="kicker">Job queue</p>
+    <h2>Queue</h2>
+    <p>One worker. One job at a time. Everything else waits here.</p>
+  </div>
+</header>
+
+<section class="metrics" aria-label="System summary">
+  <div class="metric"><span>Queued</span><strong>{{ metrics.queued }}</strong></div>
+  <div class="metric"><span>Running</span><strong {% if metrics.running %}class="warn"{% endif %}>{{ metrics.running }}</strong></div>
+  <div class="metric"><span>Failed</span><strong {% if metrics.failed %}class="bad"{% endif %}>{{ metrics.failed }}</strong></div>
+  <div class="metric"><span>Needs review</span><strong {% if metrics.needs_review %}class="bad"{% endif %}>{{ metrics.needs_review }}</strong></div>
+</section>
+
+<div class="panel">
+  <div class="panel-head">
+    <div>
+      <h3>Jobs</h3>
+      <p>Queued and running jobs. Completed jobs are in Runs.</p>
+    </div>
+  </div>
+
+  {% set active_jobs = jobs | selectattr('status', 'in', ['queued', 'running']) | list %}
+  {% if active_jobs %}
+    {% for job in active_jobs %}
+    <article class="queue-item {% if job.status == 'running' %}running{% endif %}">
+      <div class="row">
+        <div style="flex:1;min-width:0;">
+          <h4 class="item-title">{{ job.status|capitalize }}: {{ job.label or job.job_type }}</h4>
+          <p class="item-copy">
+            {{ job.job_type }}
+            {% if job.queued_at %} &mdash; queued {{ job.queued_at[:16] }}{% endif %}
+            {% if job.started_at %} &mdash; started {{ job.started_at[:16] }}{% endif %}
+          </p>
+          {% if job.status == 'running' and job.log_path %}
+          <div class="log" id="log-{{ job.id }}">Loading log...</div>
+          {% endif %}
+        </div>
+        <div class="item-actions">
+          {% if job.status == 'queued' %}
+            <button class="btn mini danger" onclick="cancelJob({{ job.id }}, this)">Cancel</button>
+          {% else %}
+            <span class="pill good">running</span>
+          {% endif %}
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  {% else %}
+    <div class="empty-state">Queue is clear. No jobs running or waiting.</div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  async function cancelJob(jobId, btn) {
+    if (!confirm('Cancel this job?')) return;
+    btn.disabled = true;
+    const res = await api('/api/job/' + jobId + '/cancel', {});
+    if (res.ok) {
+      toast('Job cancelled.', 'success');
+      setTimeout(() => location.reload(), 800);
+    } else {
+      btn.disabled = false;
+      toast('Error: ' + res.error, 'error');
+    }
+  }
+</script>
+{% endblock %}

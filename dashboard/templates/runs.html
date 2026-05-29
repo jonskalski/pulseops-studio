@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Runs — PulseOps Studio{% endblock %}
+
+{% block content %}
+<header class="topbar">
+  <div>
+    <p class="kicker">Run history</p>
+    <h2>Runs</h2>
+    <p>Everything the worker has executed. Stuck runs can be resumed.</p>
+  </div>
+</header>
+
+<div class="panel">
+  <div class="panel-head">
+    <div>
+      <h3>All Jobs</h3>
+      <p>Last 50 runs across all job types.</p>
+    </div>
+  </div>
+
+  {% if jobs %}
+    {% for job in jobs %}
+    <article class="queue-item {% if job.status == 'running' %}running{% endif %}">
+      <div class="row">
+        <div style="flex:1;min-width:0;">
+          <h4 class="item-title">{{ job.label or job.job_type }}</h4>
+          <p class="item-copy">
+            {{ job.job_type }}
+            {% if job.queued_at %} &mdash; {{ job.queued_at[:16] }}{% endif %}
+            {% if job.duration_seconds %} &mdash; {{ job.duration_seconds }}s{% endif %}
+          </p>
+          <div class="pills" style="margin-top:8px;">
+            {% if job.status == 'succeeded' %}
+              <span class="pill good">succeeded</span>
+            {% elif job.status == 'running' %}
+              <span class="pill warn">running</span>
+            {% elif job.status == 'failed' %}
+              <span class="pill bad">failed</span>
+            {% elif job.status == 'queued' %}
+              <span class="pill">queued</span>
+            {% elif job.status == 'cancelled' %}
+              <span class="pill">cancelled</span>
+            {% else %}
+              <span class="pill">{{ job.status }}</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="item-actions">
+          {% if job.status in ['failed', 'running'] %}
+            <button class="btn mini primary" onclick="resumeRun({{ job.id }}, this)">Resume</button>
+          {% endif %}
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  {% else %}
+    <div class="empty-state">No runs yet.</div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  async function resumeRun(jobId, btn) {
+    btn.disabled = true;
+    btn.textContent = 'Queuing...';
+    const res = await api('/api/run/' + jobId + '/resume', {});
+    if (res.ok) {
+      toast('Resume job queued.', 'success');
+      setTimeout(() => location.reload(), 1000);
+    } else {
+      btn.disabled = false;
+      btn.textContent = 'Resume';
+      toast('Error: ' + res.error, 'error');
+    }
+  }
+</script>
+{% endblock %}

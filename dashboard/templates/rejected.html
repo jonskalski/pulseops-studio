@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Rejected — PulseOps Studio{% endblock %}
+
+{% block content %}
+<header class="topbar">
+  <div>
+    <p class="kicker">Failed posts</p>
+    <h2>Rejected</h2>
+    <p>Posts that failed all 3 approver attempts. Force publish or let them go.</p>
+  </div>
+</header>
+
+<div class="panel">
+  <div class="panel-head">
+    <div>
+      <h3>Needs Review</h3>
+      <p>From Airtable Rejected Posts table, Status = Needs Review.</p>
+    </div>
+  </div>
+
+  {% if posts %}
+    {% for post in posts %}
+    <article class="draft-item">
+      <div class="row">
+        <div style="flex:1;min-width:0;">
+          <h4 class="item-title">{{ post.topic }}</h4>
+          {% if post.reason %}
+            <p class="item-copy">{{ post.reason }}</p>
+          {% endif %}
+          <div class="pills" style="margin-top:8px;">
+            <span class="pill bad">needs review</span>
+            {% if post.date %}<span class="pill">{{ post.date }}</span>{% endif %}
+            {% if post.run_id %}<span class="pill">run {{ post.run_id[:8] }}</span>{% endif %}
+          </div>
+        </div>
+        <div class="item-actions">
+          <button class="btn mini primary" onclick="forcePublish('{{ post.record_id }}', this)">Force Publish</button>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  {% else %}
+    <div class="empty-state">No rejected posts waiting. Clean slate.</div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  async function forcePublish(recordId, btn) {
+    if (!confirm('Force publish this post? It skips the approver and publishes the last polished draft.')) return;
+    btn.disabled = true;
+    btn.textContent = 'Queuing...';
+    const res = await api('/api/rejected/' + recordId + '/force-publish', {});
+    if (res.ok) {
+      toast('Force publish job queued.', 'success');
+      btn.closest('.draft-item').style.opacity = '0.4';
+    } else {
+      btn.disabled = false;
+      btn.textContent = 'Force Publish';
+      toast('Error: ' + res.error, 'error');
+    }
+  }
+</script>
+{% endblock %}

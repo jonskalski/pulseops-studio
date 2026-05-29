@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Inbox — PulseOps Studio{% endblock %}
+
+{% block content %}
+<header class="topbar">
+  <div>
+    <p class="kicker">Pending decisions</p>
+    <h2>Inbox</h2>
+    <p>Topic suggestions waiting for approve, deny, or wait. Approving queues a pipeline run immediately.</p>
+  </div>
+</header>
+
+<section class="metrics" aria-label="System summary">
+  <div class="metric">
+    <span>Inbox</span>
+    <strong>{{ topics|length }}</strong>
+  </div>
+  <div class="metric">
+    <span>Queued</span>
+    <strong>{{ metrics.queued }}</strong>
+  </div>
+  <div class="metric">
+    <span>Running</span>
+    <strong {% if metrics.running > 0 %}class="warn"{% endif %}>{{ metrics.running }}</strong>
+  </div>
+  <div class="metric">
+    <span>Needs review</span>
+    <strong {% if metrics.needs_review > 0 %}class="bad"{% endif %}>{{ metrics.needs_review }}</strong>
+  </div>
+</section>
+
+<div class="panel">
+  <div class="panel-head">
+    <div>
+      <h3>Topic Suggestions</h3>
+      <p>From today's topic picker. Source: Airtable Content Ideas (Status = Suggested).</p>
+    </div>
+  </div>
+
+  {% if topics %}
+    {% for t in topics %}
+    <article class="inbox-item" data-record-id="{{ t.record_id }}">
+      <div class="row">
+        <div style="flex:1;min-width:0;">
+          <h4 class="item-title">{{ t.topic }}</h4>
+          {% if t.why %}
+            <p class="item-copy">{{ t.why }}</p>
+          {% endif %}
+          <div class="pills">
+            <span class="pill good">topic suggestion</span>
+            {% if t.suggested_date %}
+              <span class="pill">{{ t.suggested_date }}</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="item-actions">
+          <button class="btn mini primary" onclick="approveTopic('{{ t.record_id }}', {{ t.topic|tojson }}, {{ (t.why or '')|tojson }}, this)">Approve</button>
+          <button class="btn mini" onclick="waitTopic('{{ t.record_id }}', this)">Wait</button>
+          <button class="btn mini danger" onclick="showDenyModal('{{ t.record_id }}', {{ t.topic|tojson }})">Deny</button>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  {% else %}
+    <div class="empty-state">
+      No topics waiting. The pipeline is either caught up or the topic picker hasn't run yet today.
+    </div>
+  {% endif %}
+</div>
+
+<!-- Deny modal -->
+<div id="deny-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:50;display:none;place-items:center;">
+  <div style="width:min(480px,calc(100vw - 40px));background:var(--surface);border:1px solid var(--border-soft);border-radius:2px;padding:28px;">
+    <h3 style="margin:0 0 6px;font-size:16px;">Deny topic</h3>
+    <p id="deny-topic-label" style="margin:0 0 18px;color:var(--muted);font-size:14px;"></p>
+    <div class="field">
+      <label for="deny-reason">Reason (required)</label>
+      <textarea id="deny-reason" rows="3" placeholder="Why is this being denied? This will be logged."></textarea>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+      <button class="btn" onclick="closeDenyModal()">Cancel</button>
+      <button class="btn danger" onclick="submitDeny()">Deny</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  let _denyRecordId = null;
+
+  async function approveTopic(recordId, topic, why, btn) {
+    btn.disabled = true;
+    btn.textContent = 'Queuing...';
+    const res = await api('/api/topic/approve', {topic, why, record_id: recordId});
+    if (res.ok) {
+      btn.closest('.inbox-item').style.opacity = '0.4';
+      toast('Queued: ' + topic, 'success');
+    } else {
+      btn.disabled = false;
+      btn.textContent = 'Approve';
+      toast('Error: ' + res.error, 'error');
+    }
+  }
+
+  async function waitTopic(recordId, btn) {
+    btn.disabled = true;
+    const res = await api('/api/topic/wait', {record_id: recordId});
+    if (res.ok) {
+      btn.closest('.inbox-item').style.opacity = '0.4';
+      toast('Moved to On Hold', 'success');
+    } else {
+      btn.disabled = false;
+      toast('Error: ' + res.error, 'error');
+    }
+  }
+
+  function showDenyModal(recordId, topic) {
+    _denyRecordId = recordId;
+    document.getElementById('deny-topic-label').textContent = topic;
+    document.getElementById('deny-reason').value = '';
+    document.getElementById('deny-modal').style.display = 'grid';
+  }
+
+  function closeDenyModal() {
+    document.getElementById('deny-modal').style.display = 'none';
+    _denyRecordId = null;
+  }
+
+  async function submitDeny() {
+    const reason = document.getElementById('deny-reason').value.trim();
+    if (!reason) { toast('A reason is required to deny.', 'error'); return; }
+    const res = await api('/api/topic/deny', {record_id: _denyRecordId, reason});
+    if (res.ok) {
+      document.querySelector(`[data-record-id="${_denyRecordId}"]`).style.opacity = '0.4';
+      toast('Topic denied and logged.', 'success');
+      closeDenyModal();
+    } else {
+      toast('Error: ' + res.error, 'error');
+    }
+  }
+</script>
+{% endblock %}

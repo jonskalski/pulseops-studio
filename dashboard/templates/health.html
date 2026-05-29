@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Health — PulseOps Studio{% endblock %}
+
+{% block content %}
+<header class="topbar">
+  <div>
+    <p class="kicker">System status</p>
+    <h2>Health</h2>
+    <p>The boring panel. Therefore important.</p>
+  </div>
+</header>
+
+<div style="max-width:520px;">
+  <div class="panel">
+    <div class="panel-head">
+      <div>
+        <h3>Services</h3>
+        <p>Live checks against worker, Airtable, and WordPress.</p>
+      </div>
+    </div>
+    <div class="health">
+      <div class="health-row">
+        <span>Worker</span>
+        <strong class="{{ 'good' if status.worker == 'online' else 'bad' }}">{{ status.worker }}</strong>
+      </div>
+      <div class="health-row">
+        <span>Lock file</span>
+        <strong>{{ status.lock }}</strong>
+      </div>
+      <div class="health-row">
+        <span>Airtable</span>
+        <strong class="{{ 'good' if status.airtable == 'ok' else 'bad' }}">{{ status.airtable }}</strong>
+      </div>
+      <div class="health-row">
+        <span>WordPress</span>
+        <strong class="{{ 'good' if status.wordpress == 'ok' else 'bad' }}">{{ status.wordpress }}</strong>
+      </div>
+      <div class="health-row">
+        <span>Stale jobs (stuck running)</span>
+        <strong class="{{ 'bad' if status.stale_jobs > 0 else 'good' }}">{{ status.stale_jobs }}</strong>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
