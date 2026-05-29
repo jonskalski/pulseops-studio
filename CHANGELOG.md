@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-05-29 — cluster_writer.py fix + Airtable backfill
+
+### cluster_writer.py
+- Fixed stuck cluster bug: now waits for pipeline subprocess to complete, checks for `published.json`, marks Airtable "Published" on success or reverts to "Suggested" on failure
+- Previously fired-and-forgot, leaving failed clusters permanently stuck at "In Queue"
+
+### Airtable (via API)
+- Backfilled 9 clusters from "In Queue" to "Published" with correct WordPress published dates (May 1–20)
+- Reset 2 genuine failures back to "Suggested" and re-queued both via pipeline.py (PIDs launched manually)
+
 ## 2026-05-28 — Pipeline: title enforcement + Yoast meta desc write at publish
 
 ### pipeline.py

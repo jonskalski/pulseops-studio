@@ -11,10 +11,13 @@ import sys
 import random
 import subprocess
 import requests
+import glob
 sys.path.insert(0, "/root/pulseops-studio")
 from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"), override=True)
 from airtable.client import _get, _update, TABLE_CLUSTERS
+
+RUNS_DIR = os.path.join(os.path.dirname(__file__), "runs")
 
 DISCORD_WEBHOOK = os.environ.get("DISCORD_DRAFTS_WEBHOOK_URL") or os.environ.get("DISCORD_WEBHOOK_URL")
 
@@ -67,14 +70,38 @@ def main():
     try:
         proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
         out = proc.stderr.read()
+        returncode = proc.wait()
         if out:
             print(f"[pipeline stderr] {out.decode()}", flush=True)
-        notify_discord(f"cluster_writer: Started pipeline for cluster post **{title}** (Pillar: {pillar}). Check #drafts when done.")
     except Exception as e:
-        # Revert status if pipeline failed to launch
         _update(TABLE_CLUSTERS, record_id, {"Status": "Suggested"})
-        print(f"Failed to launch pipeline: {e}")
+        print(f"Failed to launch pipeline: {e}", flush=True)
         notify_discord(f"cluster_writer: Failed to launch pipeline for **{title}**: {e}")
+        return
+
+    # Find the run dir for this cluster and check if it published successfully
+    published_date = None
+    for meta_path in glob.glob(os.path.join(RUNS_DIR, "*/run_meta.json")):
+        try:
+            import json
+            meta = json.load(open(meta_path))
+            if meta.get("cluster_id") == record_id:
+                pub_path = os.path.join(os.path.dirname(meta_path), "published.json")
+                if os.path.exists(pub_path):
+                    pub = json.load(open(pub_path))
+                    published_date = pub.get("date", "")[:10]
+                break
+        except Exception:
+            continue
+
+    if published_date:
+        _update(TABLE_CLUSTERS, record_id, {"Status": "Published", "Published Date": published_date})
+        print(f"  Published: {title} ({published_date})", flush=True)
+        notify_discord(f"cluster_writer: Published cluster post **{title}** (Pillar: {pillar}). Check #drafts when done.")
+    else:
+        _update(TABLE_CLUSTERS, record_id, {"Status": "Suggested"})
+        print(f"  Pipeline failed, reverted to Suggested: {title}", flush=True)
+        notify_discord(f"cluster_writer: Pipeline failed for **{title}** — reverted to Suggested for retry.")
 
 
 if __name__ == "__main__":
